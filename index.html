@@ -3,1067 +3,807 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
 <title>TireTrack – ระบบจัดการจองยาง</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0a0d14;--surf:#111520;--s2:#181d2e;--s3:#1e2438;
-  --bd:#252b3d;--b2:#2e3650;
-  --tx:#e8ecf4;--t2:#8b92a9;--t3:#5a6177;
-  --ac:#3b82f6;--a2:#1d4ed8;--ag:rgba(59,130,246,.15);
-  --gn:#22c55e;--gb:rgba(34,197,94,.12);
-  --yw:#eab308;--yb:rgba(234,179,8,.12);
-  --rd:#ef4444;--rb:rgba(239,68,68,.12);
-  --or:#f97316;
-  --r:12px;--rs:8px;--rl:16px;
-  --font:'Sarabun',sans-serif;
-  --mono:'JetBrains Mono',monospace;
+  --bg:#080b12;--surf:#0f1320;--s2:#151b2e;--s3:#1a2138;--s4:#1f2844;
+  --bd:#222840;--b2:#2a3352;--b3:#334070;
+  --tx:#edf0f8;--t2:#8e97b4;--t3:#505878;
+  --ac:#3b7dff;--a2:#2563eb;--ag:rgba(59,125,255,.14);
+  --gn:#16c979;--gb:rgba(22,201,121,.13);
+  --yw:#f5a623;--yb:rgba(245,166,35,.13);
+  --rd:#f04060;--rb:rgba(240,64,96,.13);
+  --or:#ff7b2c;
+  --r:14px;--rs:10px;--rl:18px;
+  --font:'Sarabun',sans-serif;--mono:'JetBrains Mono',monospace;
+  --sidebar:248px;--hdr:56px;
 }
-html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-#root{height:100%;display:flex;flex-direction:column;max-width:480px;margin:0 auto}
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--font);font-size:15px;-webkit-font-smoothing:antialiased;overflow:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
 
-/* ── HEADER ── */
-.hdr{background:var(--surf);border-bottom:1px solid var(--bd);padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:50}
-.logo{display:flex;align-items:center;gap:10px}
-.logo-mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#6366f1);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;font-family:var(--mono);letter-spacing:-.5px}
-.logo-text{font-size:17px;font-weight:700;letter-spacing:-.3px}
-.logo-text b{color:var(--ac)}
-.role-tag{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--t3);cursor:pointer;padding:4px 8px;border-radius:6px;transition:background .2s}
-.role-tag:hover{background:var(--s2)}
-.role-dot{width:7px;height:7px;border-radius:50%}
-.bpill{background:var(--s2);border:1.5px solid var(--b2);border-radius:20px;padding:5px 12px;font-size:13px;font-weight:600;color:var(--ac);cursor:pointer;display:flex;align-items:center;gap:6px;font-family:var(--mono);transition:all .2s}
-.bpill:hover{border-color:var(--ac);background:var(--ag)}
-.ldot{width:7px;height:7px;border-radius:50%;background:var(--gn);animation:lp 2s infinite}
-@keyframes lp{0%,100%{opacity:1}50%{opacity:.25}}
+/* ─ APP SHELL ─ */
+#app{display:flex;height:100vh;width:100vw;overflow:hidden}
 
-/* ── BOTTOM NAV ── */
-.bnav{background:var(--surf);border-top:1px solid var(--bd);display:flex;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:50}
-.ntab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:9px 0 8px;cursor:pointer;border:none;background:none;color:var(--t3);font-family:var(--font);font-size:10px;font-weight:500;transition:color .2s;position:relative}
+/* ─ SIDEBAR ─ */
+.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--surf);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;z-index:40}
+.sb-logo{height:var(--hdr);display:flex;align-items:center;gap:11px;padding:0 20px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.lmark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b7dff,#6366f1);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:-.5px}
+.lname{font-size:16px;font-weight:800;letter-spacing:-.4px}
+.lname b{color:var(--ac)}
+.sb-branch{padding:14px 16px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.sb-lbl{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px}
+.sb-pill{display:flex;align-items:center;gap:8px;background:var(--s2);border:1.5px solid var(--b2);border-radius:10px;padding:9px 13px;cursor:pointer;transition:all .15s}
+.sb-pill:hover{border-color:var(--ac);background:var(--ag)}
+.sb-code{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--ac);flex:1}
+.sb-live{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--gn)}
+.ldot{width:7px;height:7px;border-radius:50%;background:var(--gn);animation:lp 2s infinite;flex-shrink:0}
+.ldot.off{background:var(--yw);animation:none}
+@keyframes lp{0%,100%{opacity:1}50%{opacity:.2}}
+.sb-nav{flex:1;padding:12px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:500;color:var(--t2);transition:all .15s;margin-bottom:3px;position:relative;border:none;background:none;width:100%;text-align:left;font-family:var(--font)}
+.nav-item:hover{background:var(--s2);color:var(--tx)}
+.nav-item.on{background:var(--ag);color:var(--ac);font-weight:600}
+.nav-item.on::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:22px;background:var(--ac);border-radius:0 3px 3px 0}
+.nav-badge{margin-left:auto;background:var(--rd);color:#fff;font-size:9px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.sb-role{padding:14px 16px;border-top:1px solid var(--bd);flex-shrink:0}
+.role-btn{display:flex;align-items:center;gap:9px;width:100%;background:var(--s2);border:1.5px solid var(--bd);border-radius:10px;padding:9px 13px;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.role-btn:hover{border-color:var(--b3)}
+.rdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.role-info{flex:1;text-align:left}
+.role-name{font-size:12px;font-weight:700;color:var(--tx)}
+.role-hint{font-size:10px;color:var(--t3);margin-top:1px}
+
+/* ─ MAIN AREA ─ */
+.main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* ─ TOPBAR (desktop) ─ */
+.topbar{height:var(--hdr);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--surf);border-bottom:1px solid var(--bd);flex-shrink:0;gap:16px}
+.tb-left{}
+.tb-title{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.tb-sub{font-size:12px;color:var(--t2);margin-top:1px}
+.tb-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+
+/* ─ MOBILE HEADER ─ */
+.m-hdr{display:none;height:var(--hdr);align-items:center;justify-content:space-between;padding:0 14px;background:var(--surf);border-bottom:1px solid var(--bd);flex-shrink:0;position:sticky;top:0;z-index:30}
+.m-hdr-l{display:flex;align-items:center;gap:9px}
+.m-hdr-r{display:flex;align-items:center;gap:7px}
+
+/* ─ CONTENT ─ */
+.page{flex:1;overflow-y:auto;overflow-x:hidden;padding:22px 24px}
+
+/* ─ BOTTOM NAV (mobile) ─ */
+.bnav{display:none;background:var(--surf);border-top:1px solid var(--bd);flex-shrink:0}
+.ntab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:9px 0 8px;cursor:pointer;border:none;background:none;color:var(--t3);font-family:var(--font);font-size:10px;font-weight:500;transition:color .15s;position:relative}
 .ntab.on{color:var(--ac)}
 .ntab.on::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:2px;background:var(--ac);border-radius:0 0 2px 2px}
-.nbadge{position:absolute;top:4px;right:calc(50% - 19px);background:var(--rd);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.nb{position:absolute;top:4px;right:calc(50% - 20px);background:var(--rd);color:#fff;font-size:9px;font-weight:700;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
 
-/* ── CONTENT ── */
-.main{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px 90px}
+/* ─ RESPONSIVE ─ */
+@media(max-width:1024px){
+  .sidebar{display:none}
+  .m-hdr{display:flex}
+  .bnav{display:flex}
+  .topbar{display:none}
+  .page{padding:14px 14px 82px}
+}
+@media(max-width:480px){.page{padding:12px 12px 82px}}
+@media(min-width:1400px){:root{--sidebar:264px}}
 
-/* ── CARDS ── */
-.card{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:12px}
+/* ─ GRIDS ─ */
+.g2c{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.g3c{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.g4c{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.g6c{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.res-grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:1100px){
+  .g2c{grid-template-columns:repeat(4,1fr)}
+  .g3c{grid-template-columns:repeat(6,1fr)}
+  .g6c{grid-template-columns:repeat(6,1fr)}
+  .res-grid{grid-template-columns:1fr 1fr}
+  .dash-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+}
+@media(min-width:700px) and (max-width:1099px){
+  .g2c{grid-template-columns:repeat(4,1fr)}
+  .g3c{grid-template-columns:repeat(3,1fr)}
+  .res-grid{grid-template-columns:1fr 1fr}
+  .g6c{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:380px){.g3c{grid-template-columns:1fr 1fr}}
 
-/* ── SECTION HEADER ── */
-.sh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
-.st{font-size:18px;font-weight:700;letter-spacing:-.3px}
+/* ─ CARDS ─ */
+.card{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.sc{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:13px 14px;transition:border-color .15s}
+.sc:hover{border-color:var(--b3)}
+.sc-l{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.sc-v{font-size:22px;font-weight:700;font-family:var(--mono);letter-spacing:-1px;line-height:1.1}
+.sc-s{font-size:11px;color:var(--t2);margin-top:3px}
+@media(min-width:1100px){.sc-v{font-size:26px}}
+@media(max-width:480px){.card{padding:14px}}
+
+/* ─ SECTION HEADER ─ */
+.sh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.st{font-size:19px;font-weight:800;letter-spacing:-.4px}
 .ss{font-size:13px;color:var(--t2);margin-top:2px}
+@media(max-width:480px){.st{font-size:17px}}
 
-/* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 18px;height:48px;border-radius:var(--rs);font-family:var(--font);font-size:15px;font-weight:600;border:none;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
-.bp{background:var(--ac);color:#fff}.bp:active{background:var(--a2)}
-.bo{background:transparent;color:var(--tx);border:1.5px solid var(--b2)}.bo:active{border-color:var(--ac);color:var(--ac)}
-.bs{background:var(--gn);color:#fff}.bd2{background:var(--rd);color:#fff}
-.bsm{height:36px;padding:0 14px;font-size:13px;border-radius:8px}
-.bxs{height:30px;padding:0 10px;font-size:12px;border-radius:6px}
+/* ─ BUTTONS ─ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 18px;height:42px;border-radius:var(--rs);font-family:var(--font);font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.bp{background:var(--ac);color:#fff}.bp:hover{background:var(--a2)}
+.bo{background:transparent;color:var(--tx);border:1.5px solid var(--b2)}.bo:hover{border-color:var(--ac);color:var(--ac)}
+.bsuc{background:var(--gn);color:#fff}
+.bdng{background:var(--rd);color:#fff}
+.bsm{height:34px;padding:0 13px;font-size:13px;border-radius:8px}
+.bxs{height:28px;padding:0 9px;font-size:12px;border-radius:7px}
 .bw{width:100%}
 
-/* ── FORMS ── */
-.fg{margin-bottom:14px}
-.fl{font-size:12px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block}
-.fi,.fs{width:100%;background:var(--s2);border:1.5px solid var(--bd);border-radius:var(--rs);padding:12px 14px;color:var(--tx);font-family:var(--font);font-size:15px;outline:none;transition:border-color .15s,box-shadow .15s}
-.fi:focus,.fs:focus{border-color:var(--ac);background:var(--s3);box-shadow:0 0 0 3px var(--ag)}
+/* ─ FORMS ─ */
+.fg{margin-bottom:13px}
+.fl{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;display:block}
+.fi,.fsl{width:100%;background:var(--s2);border:1.5px solid var(--bd);border-radius:var(--rs);padding:11px 14px;color:var(--tx);font-family:var(--font);font-size:15px;outline:none;transition:border-color .15s,box-shadow .15s}
+.fi:focus,.fsl:focus{border-color:var(--ac);background:var(--s3);box-shadow:0 0 0 3px rgba(59,125,255,.12)}
 .fi::placeholder{color:var(--t3)}
-.fs{appearance:none;cursor:pointer}
-.fs option{background:var(--s2)}
+.fsl{appearance:none;cursor:pointer}
+.fsl option{background:var(--s2)}
 .fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:380px){.fr2{grid-template-columns:1fr}}
 
-/* ── STATS ── */
-.sg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.sg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
-.sc{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:13px 15px}
-.sl{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-.sv{font-size:25px;font-weight:700;font-family:var(--mono);letter-spacing:-1px;line-height:1}
-.ss2{font-size:11px;color:var(--t2);margin-top:3px}
-
-/* ── BADGE ── */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600;line-height:1.4}
+/* ─ BADGE ─ */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;line-height:1.5}
 .bgg{background:var(--gb);color:var(--gn)}
 .bgy{background:var(--yb);color:var(--yw)}
 .bgr{background:var(--rb);color:var(--rd)}
 .bgb{background:var(--ag);color:var(--ac)}
-.bgx{background:rgba(139,146,169,.1);color:var(--t2)}
+.bgx{background:rgba(139,151,180,.1);color:var(--t2)}
 
-/* ── PROGRESS ── */
-.pb{height:7px;background:var(--s3);border-radius:4px;overflow:hidden;margin-bottom:6px}
+/* ─ PROGRESS ─ */
+.pb{height:6px;background:var(--s3);border-radius:4px;overflow:hidden}
+.pb-lg{height:9px}
 .pf{height:100%;border-radius:4px;transition:width .6s ease}
-.pg{background:linear-gradient(90deg,#16a34a,var(--gn))}
-.py{background:linear-gradient(90deg,#ca8a04,var(--yw))}
-.pr{background:linear-gradient(90deg,#b91c1c,var(--rd))}
+.pg{background:linear-gradient(90deg,#0d9e60,var(--gn))}
+.py{background:linear-gradient(90deg,#c77f0a,var(--yw))}
+.pr{background:linear-gradient(90deg,#bf2040,var(--rd))}
 
-/* ── RESERVATION CARD ── */
-.rc{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:10px;position:relative;overflow:hidden;transition:border-color .2s}
+/* ─ RESERVATION CARD ─ */
+.rc{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:15px;position:relative;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.rc:hover{border-color:var(--b3);box-shadow:0 4px 20px rgba(0,0,0,.3)}
 .rc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
 .rc.sup::before{background:var(--ac)}
 .rc.sarr::before{background:var(--gn)}
 .rc.sov::before{background:var(--rd)}
-.rh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
-.rn{font-size:16px;font-weight:700}
-.rp{font-size:12px;color:var(--t2);margin-top:2px;display:flex;align-items:center;gap:5px}
-.rd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.rdl{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.4px}
-.rdv{font-size:13px;font-weight:500;color:var(--tx);margin-top:2px}
-.rf{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.rc-h{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px}
+.rc-name{font-size:15px;font-weight:700}
+.rc-phone{font-size:12px;color:var(--t2);margin-top:2px;display:flex;align-items:center;gap:5px}
+.rc-det{display:grid;grid-template-columns:1fr 1fr;gap:7px 14px;margin-bottom:11px}
+.rc-dl{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.rc-dv{font-size:13px;font-weight:500;color:var(--tx)}
+.rc-ft{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 
-/* ── MODAL / BOTTOM SHEET ── */
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center;animation:fa .2s}
+/* ─ MODAL / SHEET ─ */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:flex-end;justify-content:center;animation:fa .2s}
 @keyframes fa{from{opacity:0}to{opacity:1}}
-.sh2{background:var(--surf);border-radius:20px 20px 0 0;border:1px solid var(--bd);border-bottom:none;width:100%;max-width:480px;max-height:93vh;overflow-y:auto;animation:fup .28s ease}
+.sheet{background:var(--surf);border-radius:20px 20px 0 0;border:1px solid var(--bd);border-bottom:none;width:100%;max-width:520px;max-height:94vh;overflow-y:auto;animation:fup .28s ease}
 @keyframes fup{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.hdl{width:36px;height:4px;background:var(--b2);border-radius:2px;margin:12px auto 16px;display:block}
-.mh{display:flex;align-items:center;justify-content:space-between;padding:0 20px 14px;border-bottom:1px solid var(--bd);margin-bottom:18px}
-.mt2{font-size:18px;font-weight:700}
-.mb2{padding:0 20px}
-.mf{padding:14px 20px 22px}
+@media(min-width:1025px){
+  .ov{align-items:center;padding:24px}
+  .sheet{border-radius:var(--rl);max-height:90vh;animation:fpop .22s ease}
+  @keyframes fpop{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+}
+.hdl{width:36px;height:4px;background:var(--b2);border-radius:2px;margin:12px auto 0}
+@media(min-width:1025px){.hdl{display:none}}
+.m-hdr2{display:flex;align-items:center;justify-content:space-between;padding:16px 22px 14px;border-bottom:1px solid var(--bd)}
+.m-title{font-size:17px;font-weight:700}
+.m-body{padding:18px 22px}
+.m-ftr{padding:12px 22px 22px;display:flex;gap:10px}
 .xb{width:32px;height:32px;border-radius:50%;background:var(--s2);border:1px solid var(--bd);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);transition:all .15s}
 .xb:hover{background:var(--s3);color:var(--tx)}
 
-/* ── BRANCH PICKER ── */
-.bgr2{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px;padding-bottom:4px}
-.bb{background:var(--s2);border:1.5px solid var(--bd);border-radius:var(--rs);padding:13px 4px;text-align:center;cursor:pointer;transition:all .15s;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--t2)}
+/* ─ BRANCH PICKER ─ */
+.bgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px}
+.bb{background:var(--s2);border:1.5px solid var(--bd);border-radius:10px;padding:13px 4px;text-align:center;cursor:pointer;transition:all .15s;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--t2)}
 .bb.on{background:var(--ag);border-color:var(--ac);color:var(--ac)}
 .bb:hover{border-color:var(--ac);color:var(--ac)}
 
-/* ── SEARCH BAR ── */
-.sbar{display:flex;align-items:center;gap:10px;background:var(--s2);border:1.5px solid var(--bd);border-radius:var(--rs);padding:0 14px;margin-bottom:14px;height:46px;transition:border-color .15s}
+/* ─ SEARCH & FILTER ─ */
+.sbar{display:flex;align-items:center;gap:10px;background:var(--s2);border:1.5px solid var(--bd);border-radius:var(--rs);padding:0 14px;margin-bottom:12px;height:42px;transition:border-color .15s}
 .sbar:focus-within{border-color:var(--ac)}
-.sbar input{flex:1;background:none;border:none;outline:none;font-family:var(--font);font-size:15px;color:var(--tx)}
+.sbar input{flex:1;background:none;border:none;outline:none;font-family:var(--font);font-size:14px;color:var(--tx)}
 .sbar input::placeholder{color:var(--t3)}
-
-/* ── FILTER CHIPS ── */
-.fchips{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;-ms-overflow-style:none;scrollbar-width:none}
+.fchips{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .fchips::-webkit-scrollbar{display:none}
-.fc{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--bd);background:none;color:var(--t2);white-space:nowrap;font-family:var(--font);transition:all .15s}
+.fc{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--bd);background:none;color:var(--t2);white-space:nowrap;font-family:var(--font);transition:all .15s}
 .fc.on{background:var(--ac);border-color:var(--ac);color:#fff}
 
-/* ── DATE NAV ── */
+/* ─ DATE NAV ─ */
 .dnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:8px}
-.dnb{width:44px;height:44px;flex-shrink:0;border-radius:10px;background:var(--s2);border:1px solid var(--bd);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);transition:all .15s}
+.dnb{width:40px;height:40px;flex-shrink:0;border-radius:10px;background:var(--s2);border:1px solid var(--bd);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);transition:all .15s}
 .dnb:hover{border-color:var(--ac);color:var(--ac)}
-.dinfo{text-align:center;flex:1}
-.dinfo-main{font-size:16px;font-weight:700}
-.dinfo-sub{font-size:12px;color:var(--t2);margin-top:1px}
+.d-info{text-align:center;flex:1}
+.d-main{font-size:16px;font-weight:700}
+.d-sub{font-size:12px;color:var(--t2);margin-top:2px}
 
-/* ── EMPTY STATE ── */
-.emp{text-align:center;padding:44px 20px}
+/* ─ EMPTY / LOADING ─ */
+.emp{text-align:center;padding:48px 20px}
 .emp-ico{font-size:44px;margin-bottom:14px;opacity:.35}
 .emp-t{font-size:16px;font-weight:600;color:var(--t2);margin-bottom:5px}
-.emp-s{font-size:13px;color:var(--t3);line-height:1.6}
+.emp-s{font-size:13px;color:var(--t3);line-height:1.7;white-space:pre-line}
+.spin{display:inline-block;width:32px;height:32px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 
-/* ── CONFIRM ── */
-.cov{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;animation:fa .2s}
-.cdlg{background:var(--surf);border:1px solid var(--bd);border-radius:var(--rl);padding:24px;max-width:310px;width:100%;animation:pop .2s ease}
-@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+/* ─ CONFIRM ─ */
+.cov{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;animation:fa .2s}
+.cdlg{background:var(--surf);border:1px solid var(--bd);border-radius:var(--rl);padding:28px;max-width:310px;width:100%;animation:fpop2 .2s ease;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+@keyframes fpop2{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
 
-/* ── TOAST ── */
-.tcon{position:fixed;top:64px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:448px;z-index:500;pointer-events:none}
-.toast{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 30px rgba(0,0,0,.5);animation:tslide .25s ease;pointer-events:all}
-@keyframes tslide{from{transform:translateY(-8px);opacity:0}to{transform:translateY(0);opacity:1}}
-.tg{border-left:3px solid var(--gn)}.te{border-left:3px solid var(--rd)}
+/* ─ TOAST ─ */
+.tcon{position:fixed;top:66px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:420px;z-index:600;pointer-events:none}
+@media(min-width:1025px){.tcon{top:14px;right:18px;left:auto;transform:none;width:340px}}
+.toast{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:11px 15px;margin-bottom:8px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:tsl .25s ease;pointer-events:all}
+@keyframes tsl{from{transform:translateY(-8px);opacity:0}to{transform:translateY(0);opacity:1}}
+.tg{border-left:3px solid var(--gn)}.te{border-left:3px solid var(--rd)}.tw{border-left:3px solid var(--yw)}
 
-/* ── METRIC BOX ── */
-.mbox{background:linear-gradient(135deg,rgba(59,130,246,.09),rgba(99,102,241,.04));border:1px solid rgba(59,130,246,.22);border-radius:var(--r);padding:18px;margin-bottom:14px;text-align:center}
-.mnum{font-size:44px;font-weight:700;font-family:var(--mono);letter-spacing:-2px;line-height:1.1}
-.munit{font-size:18px;font-weight:400;color:var(--t2)}
+/* ─ METRIC BOX ─ */
+.mbox{background:linear-gradient(135deg,rgba(59,125,255,.1),rgba(99,102,241,.05));border:1px solid rgba(59,125,255,.22);border-radius:var(--r);padding:20px;margin-bottom:16px;text-align:center}
+.mnum{font-size:48px;font-weight:800;font-family:var(--mono);letter-spacing:-3px;line-height:1.05}
+.munit{font-size:20px;font-weight:400;color:var(--t2)}
 
-/* ── RANK ROW ── */
-.rr{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)}
+/* ─ RANK ─ */
+.rr{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd)}
 .rr:last-child{border-bottom:none}
 
-/* ── DIVIDER ── */
-.dv{height:1px;background:var(--bd);margin:12px 0}
+/* ─ DIVIDER ─ */
+.dv{height:1px;background:var(--bd);margin:14px 0}
 
-/* ── UTILS ── */
-.gn{color:var(--gn)}.yw{color:var(--yw)}.rd2{color:var(--rd)}.bl{color:var(--ac)}.mu{color:var(--t2)}
+/* ─ SYNC CHIP ─ */
+.sync-chip{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2);background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:4px 10px}
+
+/* ─ UTILS ─ */
+.gn{color:var(--gn)}.yw{color:var(--yw)}.rd{color:var(--rd)}.bl{color:var(--ac)}.mu{color:var(--t2)}
 .mono{font-family:var(--mono)}.bld{font-weight:700}.sem{font-weight:600}
 .fx{display:flex}.fxa{display:flex;align-items:center}.fxb{display:flex;align-items:center;justify-content:space-between}
-.g1{gap:4px}.g2{gap:8px}.g3{gap:12px}
-.mb1{margin-bottom:4px}.mb2b{margin-bottom:8px}.mb3{margin-bottom:12px}.mb4{margin-bottom:16px}
-.mt1{margin-top:4px}.mt2b{margin-top:8px}
+.g1{gap:4px}.g2{gap:8px}.g3{gap:12px}.g4{gap:16px}
+.mb2{margin-bottom:8px}.mb3{margin-bottom:12px}.mb4{margin-bottom:16px}.mb5{margin-bottom:20px}
+.mt2{margin-top:8px}.mt3{margin-top:12px}
 .w100{width:100%}.tc{text-align:center}
 .tsm{font-size:13px}.txs{font-size:11px}
 .upr{text-transform:uppercase;letter-spacing:.5px}
+.trunc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="app"></div>
 <script>
 (function(){
 'use strict';
-const {createElement:h,useState,useEffect,useMemo,useCallback,Fragment} = React;
+const {createElement:h,useState,useEffect,useMemo,useCallback,useRef} = React;
 
-/* ═══════════════════════════════════════════════════
-   DATA & HELPERS
-═══════════════════════════════════════════════════ */
+/* ── SUPABASE ── */
+const SB_URL = 'https://yigveyqcfzkxjzsrlger.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpZ3ZleXFjZnpreGp6c3JsZ2VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMjYzMjUsImV4cCI6MjA5NDYwMjMyNX0.5fkhW2ITHwuF2KCLcbY9Eo2E6-eTnuk8B-vTVSMRXbQ';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+/* ── CONSTANTS ── */
 const BRANCHES = ['003','009','010','012','014','048','050','096','107','143'];
-const BRANDS   = ['Bridgestone','Firestone','Dayton','Michelin','Continental','Goodyear','Dunlop','Pirelli','Yokohama','Hankook','Toyo','Maxxis'];
+const BRANDS   = ['Bridgestone','Michelin','Continental','Goodyear','Dunlop','Pirelli','Yokohama','Hankook','Toyo','Maxxis'];
 const SIZES    = ['165/65R13','175/65R14','185/65R14','195/65R15','205/55R16','215/55R17','225/45R18','235/50R18','245/40R19','255/35R20'];
 
-function uid(){ return Math.random().toString(36).slice(2,9); }
+/* ── HELPERS ── */
+function todayStr(){const d=new Date();return[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
+function addDays(s,n){const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
+function fmtDate(s){if(!s)return'—';return new Date(s+'T00:00:00').toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'});}
+function fmtDay(s){return new Date(s+'T00:00:00').toLocaleDateString('th-TH',{weekday:'long'});}
+function daysDiff(s){const n=new Date();n.setHours(0,0,0,0);return Math.ceil((new Date(s+'T00:00:00')-n)/86400000);}
+function isOv(r){return r.status!=='arrived'&&daysDiff(r.service_date)<0;}
+function rCol(v){return v>=100?'gn':v>=90?'yw':'rd';}
+function rBadge(v){return v>=100?'bgg':v>=90?'bgy':'bgr';}
+function rPf(v){return v>=100?'pg':v>=90?'py':'pr';}
 
-function todayStr(){
-  const d = new Date();
-  return [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
-}
+/* ── ICONS ── */
+const SDoc=({s=20})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('path',{d:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'}),h('polyline',{points:'14 2 14 8 20 8'}),h('line',{x1:16,y1:13,x2:8,y2:13}),h('line',{x1:16,y1:17,x2:8,y2:17}));
+const SGrd=({s=20})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round'},h('rect',{x:3,y:3,width:7,height:7}),h('rect',{x:14,y:3,width:7,height:7}),h('rect',{x:14,y:14,width:7,height:7}),h('rect',{x:3,y:14,width:7,height:7}));
+const SCal=({s=20})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('rect',{x:3,y:4,width:18,height:18,rx:2}),h('line',{x1:16,y1:2,x2:16,y2:6}),h('line',{x1:8,y1:2,x2:8,y2:6}),h('line',{x1:3,y1:10,x2:21,y2:10}));
+const SPlus=({s=15})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2.5,strokeLinecap:'round'},h('line',{x1:12,y1:5,x2:12,y2:19}),h('line',{x1:5,y1:12,x2:19,y2:12}));
+const SChk=({s=13})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2.5,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'20 6 9 17 4 12'}));
+const SX=({s=13})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round'},h('line',{x1:18,y1:6,x2:6,y2:18}),h('line',{x1:6,y1:6,x2:18,y2:18}));
+const SSrc=({s=15})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round'},h('circle',{cx:11,cy:11,r:8}),h('line',{x1:21,y1:21,x2:16.65,y2:16.65}));
+const SL=({s=15})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'15 18 9 12 15 6'}));
+const SR=({s=15})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'9 18 15 12 9 6'}));
+const SEdt=({s=12})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('path',{d:'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7'}),h('path',{d:'M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z'}));
+const STrs=({s=12})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'3 6 5 6 21 6'}),h('path',{d:'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'}));
+const SPh=({s=11})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('path',{d:'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.44 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z'}));
+const STrp=({s=14})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'8 21 12 21 16 21'}),h('line',{x1:12,y1:17,x2:12,y2:21}),h('path',{d:'M7 4h10l1 5a5 5 0 0 1-12 0z'}),h('path',{d:'M5 4H3a2 2 0 0 0-2 2v2a5 5 0 0 0 5 5'}),h('path',{d:'M19 4h2a2 2 0 0 1 2 2v2a5 5 0 0 1-5 5'}));
+const SRef=({s=13})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'23 4 23 10 17 10'}),h('path',{d:'M20.49 15a9 9 0 1 1-2.12-9.36L23 10'}));
 
-function addDays(str, n){
-  const d = new Date(str+'T00:00:00');
-  d.setDate(d.getDate()+n);
-  return [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
-}
-
-function fmtDate(str){
-  if(!str) return '—';
-  const d = new Date(str+'T00:00:00');
-  return d.toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'});
-}
-
-function fmtDay(str){
-  const d = new Date(str+'T00:00:00');
-  return d.toLocaleDateString('th-TH',{weekday:'long'});
-}
-
-function daysDiff(str){
-  const now = new Date(); now.setHours(0,0,0,0);
-  const d   = new Date(str+'T00:00:00');
-  return Math.ceil((d - now) / 86400000);
-}
-
-function isOverdue(r){
-  return r.status !== 'arrived' && daysDiff(r.serviceDate) < 0;
-}
-
-function rateColor(rate){
-  return rate >= 100 ? 'gn' : rate >= 90 ? 'yw' : 'rd2';
-}
-function rateBadge(rate){
-  return rate >= 100 ? 'bgg' : rate >= 90 ? 'bgy' : 'bgr';
-}
-function ratePfill(rate){
-  return rate >= 100 ? 'pg' : rate >= 90 ? 'py' : 'pr';
-}
-
-/* sample data */
-const TODAY = todayStr();
-const SAMPLE_BD = {
-  '003':{target:100,actual:67},'009':{target:80,actual:58},'010':{target:90,actual:91},
-  '012':{target:70,actual:63},'014':{target:85,actual:44},'048':{target:75,actual:75},
-  '050':{target:60,actual:30},'096':{target:80,actual:73},'107':{target:95,actual:102},'143':{target:70,actual:52}
-};
-const SAMPLE_RES = [
-  {id:'r1',branch:'003',customerName:'สมชาย ใจดี',phone:'081-234-5678',brand:'Bridgestone',model:'Ecopia EP150',size:'195/65R15',qty:4,reservationDate:'2026-06-05',serviceDate:addDays(TODAY,2),status:'upcoming',createdAt:'2026-06-05T08:00:00'},
-  {id:'r2',branch:'003',customerName:'นริน ศรีสุข',phone:'089-876-5432',brand:'Michelin',model:'Energy XM2+',size:'205/55R16',qty:2,reservationDate:TODAY,serviceDate:TODAY,status:'upcoming',createdAt:TODAY+'T09:00:00'},
-  {id:'r3',branch:'009',customerName:'วันชัย พงษ์พัฒน์',phone:'062-345-6789',brand:'Continental',model:'ComfortContact CC6',size:'185/65R14',qty:4,reservationDate:'2026-06-01',serviceDate:addDays(TODAY,-3),status:'upcoming',createdAt:'2026-06-01T10:00:00'},
-  {id:'r4',branch:'009',customerName:'ศิริพร แก้วทอง',phone:'095-111-2222',brand:'Goodyear',model:'EfficientGrip',size:'215/55R17',qty:2,reservationDate:TODAY,serviceDate:TODAY,status:'arrived',createdAt:TODAY+'T11:00:00'},
-  {id:'r5',branch:'010',customerName:'กฤต บุญมี',phone:'083-555-7777',brand:'Dunlop',model:'SP Sport FM800',size:'225/45R18',qty:4,reservationDate:TODAY,serviceDate:addDays(TODAY,7),status:'upcoming',createdAt:TODAY+'T07:30:00'},
-  {id:'r6',branch:'012',customerName:'พัชราภรณ์ ชัย',phone:'091-444-8888',brand:'Yokohama',model:'BluEarth AE01',size:'185/65R14',qty:4,reservationDate:'2026-06-04',serviceDate:TODAY,status:'upcoming',createdAt:'2026-06-04T14:00:00'},
-  {id:'r7',branch:'048',customerName:'ธีรวัฒน์ เดชวงษ์',phone:'087-222-3333',brand:'Hankook',model:'Kinergy Eco',size:'195/65R15',qty:2,reservationDate:TODAY,serviceDate:TODAY,status:'arrived',createdAt:TODAY+'T08:45:00'},
-  {id:'r8',branch:'096',customerName:'ลลิตา แสงดาว',phone:'086-999-0000',brand:'Maxxis',model:'MA-P3',size:'205/55R16',qty:4,reservationDate:'2026-06-02',serviceDate:addDays(TODAY,-2),status:'upcoming',createdAt:'2026-06-02T13:00:00'},
-  {id:'r9',branch:'107',customerName:'อนันต์ วงษ์ดี',phone:'064-777-5555',brand:'Pirelli',model:'Cinturato P7',size:'225/45R18',qty:2,reservationDate:TODAY,serviceDate:TODAY,status:'upcoming',createdAt:TODAY+'T10:00:00'},
-  {id:'r10',branch:'143',customerName:'มาลี รักษ์ไทย',phone:'092-333-4444',brand:'Toyo',model:'Open Country A/T',size:'235/50R18',qty:4,reservationDate:addDays(TODAY,-3),serviceDate:addDays(TODAY,-3),status:'upcoming',createdAt:addDays(TODAY,-3)+'T09:00:00'},
-];
-
-/* ═══════════════════════════════════════════════════
-   SVG ICONS
-═══════════════════════════════════════════════════ */
-const SvgReserv = ({s=22})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2',strokeLinecap:'round',strokeLinejoin:'round'},
-  h('path',{d:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'}),
-  h('polyline',{points:'14 2 14 8 20 8'}),
-  h('line',{x1:16,y1:13,x2:8,y2:13}),
-  h('line',{x1:16,y1:17,x2:8,y2:17})
-);
-const SvgDash = ({s=22})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2',strokeLinecap:'round'},
-  h('rect',{x:3,y:3,width:7,height:7}),h('rect',{x:14,y:3,width:7,height:7}),
-  h('rect',{x:14,y:14,width:7,height:7}),h('rect',{x:3,y:14,width:7,height:7})
-);
-const SvgCal = ({s=22})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2',strokeLinecap:'round',strokeLinejoin:'round'},
-  h('rect',{x:3,y:4,width:18,height:18,rx:2,ry:2}),
-  h('line',{x1:16,y1:2,x2:16,y2:6}),h('line',{x1:8,y1:2,x2:8,y2:6}),h('line',{x1:3,y1:10,x2:21,y2:10})
-);
-const SvgPlus = ({s=17})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2.5',strokeLinecap:'round'},
-  h('line',{x1:12,y1:5,x2:12,y2:19}),h('line',{x1:5,y1:12,x2:19,y2:12})
-);
-const SvgCheck = ({s=15})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2.5',strokeLinecap:'round',strokeLinejoin:'round'},
-  h('polyline',{points:'20 6 9 17 4 12'})
-);
-const SvgX = ({s=15})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2',strokeLinecap:'round'},
-  h('line',{x1:18,y1:6,x2:6,y2:18}),h('line',{x1:6,y1:6,x2:18,y2:18})
-);
-const SvgSearch = ({s=17})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2',strokeLinecap:'round'},
-  h('circle',{cx:11,cy:11,r:8}),h('line',{x1:21,y1:21,x2:16.65,y2:16.65})
-);
-const SvgLeft = ({s=17})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2',strokeLinecap:'round',strokeLinejoin:'round'},
-  h('polyline',{points:'15 18 9 12 15 6'})
-);
-const SvgRight = ({s=17})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2',strokeLinecap:'round',strokeLinejoin:'round'},
-  h('polyline',{points:'9 18 15 12 9 6'})
-);
-const SvgEdit = ({s=13})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2',strokeLinecap:'round',strokeLinejoin:'round'},
-  h('path',{d:'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7'}),
-  h('path',{d:'M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z'})
-);
-const SvgTrash = ({s=13})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2',strokeLinecap:'round',strokeLinejoin:'round'},
-  h('polyline',{points:'3 6 5 6 21 6'}),
-  h('path',{d:'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'})
-);
-const SvgPhone = ({s=11})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2',strokeLinecap:'round',strokeLinejoin:'round'},
-  h('path',{d:'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.44 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z'})
-);
-const SvgTrophy = ({s=15})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:'2',strokeLinecap:'round',strokeLinejoin:'round'},
-  h('polyline',{points:'8 21 12 21 16 21'}),h('line',{x1:12,y1:17,x2:12,y2:21}),
-  h('path',{d:'M7 4h10l1 5a5 5 0 0 1-12 0z'}),
-  h('path',{d:'M5 4H3a2 2 0 0 0-2 2v2a5 5 0 0 0 5 5'}),
-  h('path',{d:'M19 4h2a2 2 0 0 1 2 2v2a5 5 0 0 1-5 5'})
-);
-
-/* ═══════════════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════════════ */
+/* ── TOAST ── */
 function Toasts({list}){
   return h('div',{className:'tcon'},
-    list.map(t => h('div',{key:t.id, className:`toast ${t.type==='success'?'tg':'te'}`},
-      h('span',{style:{fontSize:17}}, t.type==='success'?'✅':'🗑️'),
-      h('span',{style:{flex:1,fontSize:14,fontWeight:500}}, t.message)
+    list.map(t=>h('div',{key:t.id,className:'toast '+(t.cls||'tg')},
+      h('span',{style:{fontSize:17}},t.ico||'✅'),
+      h('span',{style:{flex:1,fontSize:13,fontWeight:500}},t.msg)
     ))
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   BRANCH MODAL
-═══════════════════════════════════════════════════ */
-function BranchModal({cur, onSelect, onClose}){
-  return h('div',{className:'ov', onClick:onClose},
-    h('div',{className:'sh2', onClick:e=>e.stopPropagation()},
-      h('div',{className:'hdl'}),
-      h('div',{className:'mh'},
-        h('div',null,
-          h('div',{className:'mt2'},'🏢 เลือกสาขา'),
-          h('div',{className:'tsm mu mt1'},'เลือกสาขาที่ต้องการทำงาน')
-        ),
-        h('button',{className:'xb',onClick:onClose}, h(SvgX))
-      ),
-      h('div',{className:'mb2'},
-        h('div',{className:'bgr2'},
-          BRANCHES.map(b => h('div',{key:b, className:`bb${b===cur?' on':''}`, onClick:()=>{onSelect(b);onClose();}}, b))
-        )
-      ),
-      h('div',{style:{height:24}})
-    )
-  );
-}
-
-/* ═══════════════════════════════════════════════════
-   RESERVATION FORM
-═══════════════════════════════════════════════════ */
-function ResForm({branch, onSave, onClose, editing}){
-  const init = editing ? {...editing} : {
-    customerName:'', phone:'', brand:BRANDS[0], model:'',
-    size:SIZES[3], qty:4, reservationDate:TODAY, serviceDate:'', status:'upcoming'
-  };
-  const [f, setF] = useState(init);
-  const set = (k,v) => setF(p=>({...p,[k]:v}));
-
-  function save(){
-    if(!f.customerName.trim()){ alert('กรุณากรอกชื่อลูกค้า'); return; }
-    if(!f.phone.trim()){ alert('กรุณากรอกเบอร์โทรศัพท์'); return; }
-    if(!f.serviceDate){ alert('กรุณาเลือกวันนัดเข้ารับบริการ'); return; }
-    onSave({...f, branch, id: editing?editing.id:uid(), createdAt: editing?editing.createdAt:new Date().toISOString()});
-  }
-
-  const SectionLabel = ({ico, txt}) => h('div',{
-    className:'txs sem bl upr mb2b',
-    style:{marginTop:4}
-  }, `${ico} ${txt}`);
-
-  return h('div',{className:'ov', onClick:onClose},
-    h('div',{className:'sh2', onClick:e=>e.stopPropagation()},
-      h('div',{className:'hdl'}),
-      h('div',{className:'mh'},
-        h('div',null,
-          h('div',{className:'mt2'}, editing?'✏️ แก้ไขการจอง':'➕ เพิ่มการจองใหม่'),
-          h('div',{className:'tsm mu mt1'},`สาขา ${branch}`)
-        ),
-        h('button',{className:'xb',onClick:onClose}, h(SvgX))
-      ),
-      h('div',{className:'mb2'},
-
-        h(SectionLabel,{ico:'👤', txt:'ข้อมูลลูกค้า'}),
-        h('div',{className:'fg'},
-          h('label',{className:'fl'},'ชื่อ-นามสกุล *'),
-          h('input',{className:'fi',placeholder:'ชื่อ-นามสกุล',value:f.customerName,onChange:e=>set('customerName',e.target.value)})
-        ),
-        h('div',{className:'fg'},
-          h('label',{className:'fl'},'เบอร์โทรศัพท์ *'),
-          h('input',{className:'fi',placeholder:'0xx-xxx-xxxx',type:'tel',value:f.phone,onChange:e=>set('phone',e.target.value)})
-        ),
-
-        h('div',{className:'dv'}),
-        h(SectionLabel,{ico:'🛞', txt:'ข้อมูลยาง'}),
-        h('div',{className:'fg'},
-          h('label',{className:'fl'},'แบรนด์'),
-          h('select',{className:'fs',value:f.brand,onChange:e=>set('brand',e.target.value)},
-            BRANDS.map(b=>h('option',{key:b,value:b},b))
-          )
-        ),
-        h('div',{className:'fg'},
-          h('label',{className:'fl'},'รุ่น (Model)'),
-          h('input',{className:'fi',placeholder:'เช่น Ecopia EP150, Energy XM2+',value:f.model,onChange:e=>set('model',e.target.value)})
-        ),
-        h('div',{className:'fr2'},
-          h('div',{className:'fg'},
-            h('label',{className:'fl'},'ขนาดยาง'),
-            h('select',{className:'fs',value:f.size,onChange:e=>set('size',e.target.value)},
-              SIZES.map(s=>h('option',{key:s,value:s},s))
-            )
-          ),
-          h('div',{className:'fg'},
-            h('label',{className:'fl'},'จำนวน (เส้น)'),
-            h('select',{className:'fs',value:f.qty,onChange:e=>set('qty',parseInt(e.target.value))},
-              [1,2,3,4,5,6,8].map(n=>h('option',{key:n,value:n},`${n} เส้น`))
-            )
-          )
-        ),
-
-        h('div',{className:'dv'}),
-        h(SectionLabel,{ico:'📅', txt:'วันที่'}),
-        h('div',{className:'fr2'},
-          h('div',{className:'fg'},
-            h('label',{className:'fl'},'วันที่จอง'),
-            h('input',{className:'fi',type:'date',value:f.reservationDate,onChange:e=>set('reservationDate',e.target.value)})
-          ),
-          h('div',{className:'fg'},
-            h('label',{className:'fl'},'วันนัดเข้ารับบริการ *'),
-            h('input',{className:'fi',type:'date',value:f.serviceDate,onChange:e=>set('serviceDate',e.target.value)})
-          )
-        )
-      ),
-      h('div',{className:'mf'},
-        h('div',{className:'fx g2'},
-          h('button',{className:'btn bo',style:{flex:1},onClick:onClose},'ยกเลิก'),
-          h('button',{className:'btn bp',style:{flex:2},onClick:save},
-            h(SvgCheck), editing?'บันทึกการแก้ไข':'บันทึกการจอง'
-          )
-        )
-      )
-    )
-  );
-}
-
-/* ═══════════════════════════════════════════════════
-   CONFIRM DIALOG
-═══════════════════════════════════════════════════ */
-function ConfirmDlg({title, text, ico='⚠️', okLabel='ยืนยัน', okCls='bd2', onOk, onCancel}){
-  return h('div',{className:'cov', onClick:onCancel},
-    h('div',{className:'cdlg', onClick:e=>e.stopPropagation()},
-      h('div',{style:{fontSize:38,textAlign:'center',marginBottom:12}}, ico),
-      h('div',{style:{fontSize:17,fontWeight:700,textAlign:'center',marginBottom:8}}, title),
-      h('div',{style:{fontSize:13,color:'var(--t2)',textAlign:'center',marginBottom:20,lineHeight:1.7}}, text),
+/* ── CONFIRM ── */
+function Confirm({title,text,ico,okLabel,okCls,onOk,onCancel}){
+  return h('div',{className:'cov',onClick:onCancel},
+    h('div',{className:'cdlg',onClick:e=>e.stopPropagation()},
+      h('div',{style:{fontSize:38,textAlign:'center',marginBottom:12}},ico||'⚠️'),
+      h('div',{style:{fontSize:17,fontWeight:700,textAlign:'center',marginBottom:8}},title),
+      h('div',{style:{fontSize:13,color:'var(--t2)',textAlign:'center',marginBottom:22,lineHeight:1.7}},text),
       h('div',{className:'fx g2'},
         h('button',{className:'btn bo',style:{flex:1},onClick:onCancel},'ยกเลิก'),
-        h('button',{className:`btn ${okCls}`,style:{flex:1},onClick:onOk}, okLabel)
+        h('button',{className:'btn '+(okCls||'bdng'),style:{flex:1},onClick:onOk},okLabel||'ยืนยัน')
       )
     )
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   RESERVATION CARD
-═══════════════════════════════════════════════════ */
-function ResCard({res, onArrived, onEdit, onDelete, showBranch}){
-  const ov   = isOverdue(res);
-  const sc   = res.status==='arrived' ? 'sarr' : ov ? 'sov' : 'sup';
-  const days = daysDiff(res.serviceDate);
+/* ── BRANCH MODAL ── */
+function BranchModal({cur,onSelect,onClose}){
+  return h('div',{className:'ov',onClick:onClose},
+    h('div',{className:'sheet',onClick:e=>e.stopPropagation()},
+      h('div',{className:'hdl'}),
+      h('div',{className:'m-hdr2'},
+        h('div',null,h('div',{className:'m-title'},'🏢 เลือกสาขา'),h('div',{className:'tsm mu mt2'},'เลือกสาขาที่ต้องการทำงาน')),
+        h('button',{className:'xb',onClick:onClose},h(SX))
+      ),
+      h('div',{className:'m-body'},
+        h('div',{className:'bgrid'},BRANCHES.map(b=>h('div',{key:b,className:'bb'+(b===cur?' on':''),onClick:()=>{onSelect(b);onClose();}},b)))
+      ),
+      h('div',{style:{height:20}})
+    )
+  );
+}
 
-  return h('div',{className:`rc ${sc}`},
-    h('div',{className:'rh'},
+/* ── FORM ── */
+function ResForm({branch,onSave,onClose,editing,saving}){
+  const init=editing?{...editing}:{customer_name:'',phone:'',brand:BRANDS[0],model:'',size:SIZES[3],qty:4,reservation_date:todayStr(),service_date:'',status:'upcoming'};
+  const [f,setF]=useState(init);
+  const [err,setErr]=useState('');
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+  function save(){
+    if(!f.customer_name.trim()){setErr('กรุณากรอกชื่อลูกค้า');return;}
+    if(!f.phone.trim()){setErr('กรุณากรอกเบอร์โทรศัพท์');return;}
+    if(!f.service_date){setErr('กรุณาเลือกวันนัดเข้ารับบริการ');return;}
+    setErr('');
+    onSave({...f,branch,id:editing?editing.id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)),created_at:editing?editing.created_at:new Date().toISOString()});
+  }
+  const SL2=({ico,txt})=>h('div',{className:'txs sem bl upr',style:{marginBottom:8,marginTop:4}},ico+' '+txt);
+  return h('div',{className:'ov',onClick:onClose},
+    h('div',{className:'sheet',onClick:e=>e.stopPropagation()},
+      h('div',{className:'hdl'}),
+      h('div',{className:'m-hdr2'},
+        h('div',null,h('div',{className:'m-title'},editing?'✏️ แก้ไขการจอง':'➕ เพิ่มการจองใหม่'),h('div',{className:'tsm mu mt2'},'สาขา '+branch)),
+        h('button',{className:'xb',onClick:onClose},h(SX))
+      ),
+      h('div',{className:'m-body'},
+        err&&h('div',{style:{background:'var(--rb)',border:'1px solid var(--rd)',borderRadius:8,padding:'10px 14px',marginBottom:14,fontSize:13,color:'var(--rd)'}},'\u26a0\ufe0f '+err),
+        h(SL2,{ico:'👤',txt:'ข้อมูลลูกค้า'}),
+        h('div',{className:'fg'},h('label',{className:'fl'},'ชื่อ-นามสกุล *'),h('input',{className:'fi',placeholder:'ชื่อ-นามสกุล',value:f.customer_name,onChange:e=>set('customer_name',e.target.value)})),
+        h('div',{className:'fg'},h('label',{className:'fl'},'เบอร์โทรศัพท์ *'),h('input',{className:'fi',placeholder:'0xx-xxx-xxxx',type:'tel',value:f.phone,onChange:e=>set('phone',e.target.value)})),
+        h('div',{className:'dv'}),
+        h(SL2,{ico:'🛞',txt:'ข้อมูลยาง'}),
+        h('div',{className:'fg'},h('label',{className:'fl'},'แบรนด์'),h('select',{className:'fsl',value:f.brand,onChange:e=>set('brand',e.target.value)},BRANDS.map(b=>h('option',{key:b,value:b},b)))),
+        h('div',{className:'fg'},h('label',{className:'fl'},'รุ่น (Model)'),h('input',{className:'fi',placeholder:'เช่น Ecopia EP150',value:f.model,onChange:e=>set('model',e.target.value)})),
+        h('div',{className:'fr2'},
+          h('div',{className:'fg'},h('label',{className:'fl'},'ขนาดยาง'),h('select',{className:'fsl',value:f.size,onChange:e=>set('size',e.target.value)},SIZES.map(s=>h('option',{key:s,value:s},s)))),
+          h('div',{className:'fg'},h('label',{className:'fl'},'จำนวน (เส้น)'),h('select',{className:'fsl',value:f.qty,onChange:e=>set('qty',parseInt(e.target.value))},[1,2,3,4,5,6,8].map(n=>h('option',{key:n,value:n},n+' เส้น'))))
+        ),
+        h('div',{className:'dv'}),
+        h(SL2,{ico:'📅',txt:'วันที่'}),
+        h('div',{className:'fr2'},
+          h('div',{className:'fg'},h('label',{className:'fl'},'วันที่จอง'),h('input',{className:'fi',type:'date',value:f.reservation_date,onChange:e=>set('reservation_date',e.target.value)})),
+          h('div',{className:'fg'},h('label',{className:'fl'},'วันนัดบริการ *'),h('input',{className:'fi',type:'date',value:f.service_date,onChange:e=>set('service_date',e.target.value)}))
+        )
+      ),
+      h('div',{className:'m-ftr'},
+        h('button',{className:'btn bo',style:{flex:1},onClick:onClose},'ยกเลิก'),
+        h('button',{className:'btn bp',style:{flex:2},onClick:save,disabled:saving},
+          saving?h('span',{className:'spin',style:{width:14,height:14,borderWidth:2}}):h(SChk),
+          editing?'บันทึกการแก้ไข':'บันทึกการจอง'
+        )
+      )
+    )
+  );
+}
+
+/* ── RESERVATION CARD ── */
+function ResCard({res,onArrived,onEdit,onDelete,showBranch}){
+  const ov=isOv(res);
+  const sc=res.status==='arrived'?'sarr':ov?'sov':'sup';
+  const days=daysDiff(res.service_date);
+  return h('div',{className:'rc '+sc},
+    h('div',{className:'rc-h'},
       h('div',{style:{flex:1,minWidth:0}},
-        h('div',{className:'rn'}, res.customerName),
-        h('div',{className:'rp'},
-          h(SvgPhone),
-          h('span',{className:'mono'}, res.phone),
-          showBranch && h('span',{className:'badge bgb',style:{padding:'1px 7px',fontSize:10,marginLeft:6}},`B${res.branch}`)
+        h('div',{className:'rc-name trunc'},res.customer_name),
+        h('div',{className:'rc-phone'},h(SPh),h('span',{className:'mono'},res.phone),
+          showBranch&&h('span',{className:'badge bgb',style:{padding:'1px 7px',fontSize:10,marginLeft:6}},'B'+res.branch)
         )
       ),
       h('div',{style:{flexShrink:0,marginLeft:8}},
-        res.status==='arrived'
-          ? h('span',{className:'badge bgg'},'✓ เสร็จสิ้น')
-          : ov
-          ? h('span',{className:'badge bgr'},'⚠ เกินกำหนด')
-          : h('span',{className:'badge bgb'}, days===0 ? '📅 วันนี้' : `📅 อีก ${days} วัน`)
+        res.status==='arrived'?h('span',{className:'badge bgg'},'✓ เสร็จสิ้น'):
+        ov?h('span',{className:'badge bgr'},'⚠ เกินกำหนด'):
+        h('span',{className:'badge bgb'},days===0?'📅 วันนี้':'📅 อีก '+days+'ว')
       )
     ),
-
-    h('div',{className:'rd'},
-      h('div',null,
-        h('div',{className:'rdl'},'แบรนด์ / รุ่น'),
-        h('div',{className:'rdv'}, `${res.brand}${res.model?' · '+res.model:''}`)
-      ),
-      h('div',null,
-        h('div',{className:'rdl'},'ขนาด × จำนวน'),
-        h('div',{className:'rdv mono'}, `${res.size} × ${res.qty}`)
-      ),
-      h('div',null,
-        h('div',{className:'rdl'},'วันที่จอง'),
-        h('div',{className:'rdv'}, fmtDate(res.reservationDate))
-      ),
-      h('div',null,
-        h('div',{className:'rdl'},'วันนัดบริการ'),
-        h('div',{className:`rdv${ov?' rd2':''}`}, fmtDate(res.serviceDate))
-      )
+    h('div',{className:'rc-det'},
+      h('div',null,h('div',{className:'rc-dl'},'แบรนด์ / รุ่น'),h('div',{className:'rc-dv'},res.brand+(res.model?' · '+res.model:''))),
+      h('div',null,h('div',{className:'rc-dl'},'ขนาด × เส้น'),h('div',{className:'rc-dv mono'},res.size+' × '+res.qty)),
+      h('div',null,h('div',{className:'rc-dl'},'วันที่จอง'),h('div',{className:'rc-dv'},fmtDate(res.reservation_date))),
+      h('div',null,h('div',{className:'rc-dl'},'วันนัดบริการ'),h('div',{className:'rc-dv'+(ov?' rd':'')},fmtDate(res.service_date)))
     ),
-
-    h('div',{className:'rf'},
-      res.status !== 'arrived'
-        ? h('button',{className:'btn bs bsm', onClick:()=>onArrived(res.id)},
-            h(SvgCheck,{s:14}), 'ยืนยันเข้ารับบริการ')
-        : h('span',{className:'tsm mu'},'✅ รับบริการแล้ว'),
+    h('div',{className:'rc-ft'},
+      res.status!=='arrived'
+        ?h('button',{className:'btn bsuc bsm',onClick:()=>onArrived(res.id)},h(SChk,{s:13}),'ยืนยันเข้ารับบริการ')
+        :h('span',{className:'tsm mu'},'✅ รับบริการแล้ว'),
       h('div',{className:'fx g2'},
-        h('button',{
-          className:'btn bo bxs',
-          onClick:()=>onEdit(res)
-        }, h(SvgEdit)),
-        h('button',{
-          className:'btn bxs',
-          style:{background:'var(--rb)',color:'var(--rd)',border:'1px solid rgba(239,68,68,.3)'},
-          onClick:()=>onDelete(res.id)
-        }, h(SvgTrash))
+        h('button',{className:'btn bo bxs',onClick:()=>onEdit(res)},h(SEdt)),
+        h('button',{className:'btn bxs',style:{background:'var(--rb)',color:'var(--rd)',border:'1px solid rgba(240,64,96,.3)'},onClick:()=>onDelete(res.id)},h(STrs))
       )
     )
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   MENU 1 – รายการจอง
-═══════════════════════════════════════════════════ */
-function MenuReservations({branch, reservations, onSave, onArrived, onDelete, editingRes, setEditingRes}){
-  const [showForm, setShowForm] = useState(false);
-  const [delId,   setDelId]    = useState(null);
-  const [search,  setSearch]   = useState('');
-  const [filt,    setFilt]     = useState('all');
-
-  // เปิด form แก้ไขเมื่อ editingRes เปลี่ยน
-  useEffect(()=>{
-    if(editingRes){ setShowForm(true); }
-  }, [editingRes]);
-
-  const mine = useMemo(()=> reservations.filter(r=>r.branch===branch), [reservations,branch]);
-
-  const cnts = useMemo(()=>({
-    all:     mine.length,
-    upcoming:mine.filter(r=>r.status==='upcoming'&&!isOverdue(r)).length,
-    arrived: mine.filter(r=>r.status==='arrived').length,
-    overdue: mine.filter(r=>isOverdue(r)).length,
-  }),[mine]);
-
-  const list = useMemo(()=>{
-    let l = mine;
-    if(filt==='upcoming') l = l.filter(r=>r.status==='upcoming'&&!isOverdue(r));
-    else if(filt==='arrived') l = l.filter(r=>r.status==='arrived');
-    else if(filt==='overdue') l = l.filter(r=>isOverdue(r));
-    if(search.trim()) l = l.filter(r=> r.customerName.includes(search)||r.phone.includes(search));
-    return [...l].sort((a,b)=>new Date(a.serviceDate)-new Date(b.serviceDate));
+/* ── MENU 1 — RESERVATIONS ── */
+function Menu1({branch,reservations,loading,onSave,onArrived,onDelete,editingRes,setEditingRes,saving}){
+  const [showForm,setShowForm]=useState(false);
+  const [delId,setDelId]=useState(null);
+  const [search,setSearch]=useState('');
+  const [filt,setFilt]=useState('all');
+  useEffect(()=>{if(editingRes)setShowForm(true);},[editingRes]);
+  const mine=useMemo(()=>reservations.filter(r=>r.branch===branch),[reservations,branch]);
+  const cnts=useMemo(()=>({all:mine.length,upcoming:mine.filter(r=>r.status==='upcoming'&&!isOv(r)).length,arrived:mine.filter(r=>r.status==='arrived').length,overdue:mine.filter(r=>isOv(r)).length}),[mine]);
+  const list=useMemo(()=>{
+    let l=mine;
+    if(filt==='upcoming')l=l.filter(r=>r.status==='upcoming'&&!isOv(r));
+    else if(filt==='arrived')l=l.filter(r=>r.status==='arrived');
+    else if(filt==='overdue')l=l.filter(r=>isOv(r));
+    if(search.trim())l=l.filter(r=>r.customer_name.includes(search)||r.phone.includes(search));
+    return [...l].sort((a,b)=>new Date(a.service_date)-new Date(b.service_date));
   },[mine,filt,search]);
-
-  function openNew(){ setEditingRes(null); setShowForm(true); }
-  function openEdit(r){ setEditingRes(r); setShowForm(true); }
-
-  function handleSave(data){
-    onSave(data);
-    setShowForm(false);
-    setEditingRes(null);
-  }
-  function handleClose(){
-    setShowForm(false);
-    setEditingRes(null);
-  }
-
+  function openNew(){setEditingRes(null);setShowForm(true);}
+  function openEdit(r){setEditingRes(r);setShowForm(true);}
+  function handleSave(d){onSave(d);setShowForm(false);setEditingRes(null);}
+  function handleClose(){setShowForm(false);setEditingRes(null);}
   return h('div',null,
-    /* section header */
     h('div',{className:'sh'},
-      h('div',null,
-        h('div',{className:'st'},'รายการจอง'),
-        h('div',{className:'ss'},`สาขา ${branch} · ${cnts.all} รายการ`)
-      ),
-      h('button',{className:'btn bp bsm',onClick:openNew}, h(SvgPlus),'จองใหม่')
+      h('div',null,h('div',{className:'st'},'รายการจอง'),h('div',{className:'ss'},'สาขา '+branch+' · '+cnts.all+' รายการ')),
+      h('button',{className:'btn bp bsm',onClick:openNew},h(SPlus),'จองใหม่')
     ),
-
-    /* quick stats */
-    h('div',{className:'sg3'},
-      h('div',{className:'sc tc'},
-        h('div',{className:'sv bl mono'},cnts.upcoming),
-        h('div',{className:'sl'},'รอรับบริการ')
-      ),
-      h('div',{className:'sc tc'},
-        h('div',{className:'sv gn mono'},cnts.arrived),
-        h('div',{className:'sl'},'เสร็จสิ้น')
-      ),
-      h('div',{className:'sc tc'},
-        h('div',{className:'sv rd2 mono'},cnts.overdue),
-        h('div',{className:'sl'},'เกินกำหนด')
+    h('div',{className:'g2c'},
+      [{l:'รอรับบริการ',v:cnts.upcoming,c:'bl'},{l:'เสร็จสิ้น',v:cnts.arrived,c:'gn'},{l:'เกินกำหนด',v:cnts.overdue,c:'rd'},{l:'ทั้งหมด',v:cnts.all,c:''}].map(({l,v,c},i)=>
+        h('div',{key:i,className:'sc tc'},h('div',{className:'sc-v mono'+(c?' '+c:'')},v),h('div',{className:'sc-l'},l))
       )
     ),
-
-    /* search */
-    h('div',{className:'sbar'},
-      h(SvgSearch), h('input',{placeholder:'ค้นหาชื่อหรือเบอร์โทร...',value:search,onChange:e=>setSearch(e.target.value)})
-    ),
-
-    /* filter chips */
+    h('div',{className:'sbar'},h(SSrc),h('input',{placeholder:'ค้นหาชื่อหรือเบอร์โทร...',value:search,onChange:e=>setSearch(e.target.value)})),
     h('div',{className:'fchips'},
-      [['all','ทั้งหมด'],['upcoming','รอรับบริการ'],['arrived','เสร็จสิ้น'],['overdue','เกินกำหนด ⚠']].map(([v,l])=>
-        h('button',{key:v,className:`fc${filt===v?' on':''}`,onClick:()=>setFilt(v)},l)
-      )
+      [['all','ทั้งหมด'],['upcoming','รอรับบริการ'],['arrived','เสร็จสิ้น'],['overdue','เกินกำหนด ⚠']].map(([v,l])=>h('button',{key:v,className:'fc'+(filt===v?' on':''),onClick:()=>setFilt(v)},l))
     ),
-
-    /* list */
-    list.length===0
-      ? h('div',{className:'emp'},
-          h('div',{className:'emp-ico'},'📋'),
-          h('div',{className:'emp-t'},'ไม่พบรายการ'),
-          h('div',{className:'emp-s'},'กด "จองใหม่" เพื่อเพิ่มรายการจองสำหรับสาขานี้')
-        )
-      : list.map(r=>h(ResCard,{key:r.id, res:r, onArrived, onEdit:openEdit, onDelete:id=>setDelId(id), showBranch:false})),
-
-    /* modals */
-    showForm && h(ResForm,{branch, onSave:handleSave, onClose:handleClose, editing:editingRes}),
-    delId    && h(ConfirmDlg,{
-      title:'ลบรายการจอง',
-      text:'ยืนยันการลบรายการจองนี้?\nข้อมูลจะหายไปและไม่สามารถกู้คืนได้',
-      ico:'🗑️', okLabel:'ลบออก', okCls:'bd2',
-      onOk:()=>{onDelete(delId);setDelId(null);},
-      onCancel:()=>setDelId(null)
-    })
+    loading?h('div',{className:'emp'},h('div',{className:'spin'}),h('div',{className:'tsm mu mt2'},'กำลังโหลด...')):
+    list.length===0?h('div',{className:'emp'},h('div',{className:'emp-ico'},'📋'),h('div',{className:'emp-t'},'ไม่พบรายการ'),h('div',{className:'emp-s'},'กด "จองใหม่" เพื่อเพิ่มรายการ')):
+    h('div',{className:'res-grid'},list.map(r=>h(ResCard,{key:r.id,res:r,onArrived,onEdit:openEdit,onDelete:id=>setDelId(id),showBranch:false}))),
+    showForm&&h(ResForm,{branch,onSave:handleSave,onClose:handleClose,editing:editingRes,saving}),
+    delId&&h(Confirm,{title:'ลบรายการจอง',text:'ยืนยันการลบ?\nข้อมูลจะหายไปและไม่สามารถกู้คืนได้',ico:'🗑️',okLabel:'ลบออก',okCls:'bdng',onOk:()=>{onDelete(delId);setDelId(null);},onCancel:()=>setDelId(null)})
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   BRANCH PERFORMANCE CARD
-═══════════════════════════════════════════════════ */
-function BranchPerfCard({branch, data, reservations, onUpdate, defaultOpen}){
-  const [editing, setEditing] = useState(false);
-  const [tgt, setTgt] = useState(String(data.target));
-  const [act, setAct] = useState(String(data.actual));
-
-  const reserved = useMemo(()=>
-    reservations.filter(r=>r.branch===branch&&r.status!=='arrived').reduce((s,r)=>s+r.qty,0),
-    [reservations,branch]
-  );
-
-  const remaining = Math.max(0, data.target - data.actual);
-  const combined  = data.actual + reserved;
-  const rate      = data.target > 0 ? (combined / data.target * 100) : 0;
-  const daily     = remaining > 0 ? (remaining / 28).toFixed(1) : '—';
-
-  function save(){
-    onUpdate(branch,{target:Math.max(0,parseInt(tgt)||0), actual:Math.max(0,parseInt(act)||0)});
-    setEditing(false);
-  }
-
-  const col  = rateColor(rate);
-  const bcl  = rateBadge(rate);
-  const pfcl = ratePfill(rate);
-
+/* ── BRANCH PERF CARD ── */
+function BPCard({branch,data,reservations,onUpdate}){
+  const [editing,setEditing]=useState(false);
+  const [tgt,setTgt]=useState(String(data.target));
+  const [act,setAct]=useState(String(data.actual));
+  const [sv,setSv]=useState(false);
+  const reserved=useMemo(()=>reservations.filter(r=>r.branch===branch&&r.status!=='arrived').reduce((s,r)=>s+r.qty,0),[reservations,branch]);
+  const remaining=Math.max(0,data.target-data.actual);
+  const combined=data.actual+reserved;
+  const rate=data.target>0?(combined/data.target*100):0;
+  const daily=remaining>0?(remaining/28).toFixed(1):'—';
+  const col=rCol(rate);const pfcl=rPf(rate);const bcl=rBadge(rate);
+  async function save(){setSv(true);await onUpdate(branch,{target:Math.max(0,parseInt(tgt)||0),actual:Math.max(0,parseInt(act)||0)});setSv(false);setEditing(false);}
   return h('div',{className:'card'},
-    /* header row */
     h('div',{className:'fxb mb3'},
-      h('div',{className:'fxa g2'},
-        h('span',{className:'mono bld',style:{fontSize:17}},`B${branch}`),
-        h('span',{className:`badge ${bcl}`},`${rate.toFixed(1)}%`)
+      h('div',{className:'fxa g2'},h('span',{className:'mono bld',style:{fontSize:17}},'B'+branch),h('span',{className:'badge '+bcl},rate.toFixed(1)+'%')),
+      h('button',{className:'btn bo bxs',onClick:()=>{setTgt(String(data.target));setAct(String(data.actual));setEditing(!editing);}},h(SEdt,{s:11}),editing?'ยกเลิก':'แก้ไข')
+    ),
+    h('div',{className:'pb pb-lg mb2'},h('div',{className:'pf '+pfcl,style:{width:Math.min(100,rate)+'%'}})),
+    h('div',{className:'fxb txs mu mb3'},h('span',null,'รวม '+combined+' / '+data.target+' เส้น'),h('span',{className:'mono sem '+col},rate.toFixed(1)+'%')),
+    editing?h('div',null,
+      h('div',{className:'fr2 mb3'},
+        h('div',null,h('label',{className:'fl'},'เป้าหมาย (เส้น/เดือน)'),h('input',{className:'fi',type:'number',min:0,value:tgt,onChange:e=>setTgt(e.target.value)})),
+        h('div',null,h('label',{className:'fl'},'ยอดขายจริง (เส้น)'),h('input',{className:'fi',type:'number',min:0,value:act,onChange:e=>setAct(e.target.value)}))
       ),
-      h('button',{
-        className:'btn bo bxs',
-        onClick:()=>{ setTgt(String(data.target)); setAct(String(data.actual)); setEditing(!editing); }
-      }, h(SvgEdit,{s:12}), editing?'ยกเลิก':'แก้ไข')
-    ),
-
-    /* progress */
-    h('div',{className:'pb'},
-      h('div',{className:`pf ${pfcl}`,style:{width:`${Math.min(100,rate)}%`}})
-    ),
-    h('div',{className:'fxb txs mu mb3'},
-      h('span',null,`รวม ${combined} / ${data.target} เส้น`),
-      h('span',{className:`mono sem ${col}`},`${rate.toFixed(1)}%`)
-    ),
-
-    editing
-      ? h('div',null,
-          h('div',{className:'fr2 mb2b'},
-            h('div',null,
-              h('label',{className:'fl'},'เป้าหมาย (เส้น/เดือน)'),
-              h('input',{className:'fi',type:'number',min:0,value:tgt,onChange:e=>setTgt(e.target.value)})
-            ),
-            h('div',null,
-              h('label',{className:'fl'},'ยอดขายจริง (เส้น)'),
-              h('input',{className:'fi',type:'number',min:0,value:act,onChange:e=>setAct(e.target.value)})
-            )
-          ),
-          h('button',{className:'btn bp bsm bw',onClick:save}, h(SvgCheck,{s:14}), 'บันทึก')
-        )
-      : h('div',{className:'sg2', style:{marginBottom:0}},
-          ...[
-            ['เป้าหมาย',      data.target,  '',   'เส้น/เดือน'],
-            ['ขายจริง',       data.actual,  'gn', 'เส้น'],
-            ['ยางจอง',        reserved,     'bl', 'เส้น'],
-            ['คงเหลือ',       remaining>0?`-${remaining}`:'✓', remaining>0?'rd2':'gn', ''],
-            ['ขาย/วัน ที่ต้องการ', daily,  'yw', 'เส้น/วัน'],
-            ['รายการจอง',     reservations.filter(r=>r.branch===branch).length, '', 'รายการ'],
-          ].map(([lbl,val,clr,unit],i)=>
-            h('div',{key:i,className:'sc'},
-              h('div',{className:'sl'},lbl),
-              h('div',{className:`sv mono${clr?' '+clr:''}`,style:{fontSize:20}},val),
-              unit && h('div',{className:'ss2'},unit)
-            )
-          )
-        )
+      h('button',{className:'btn bp bsm bw',onClick:save,disabled:sv},sv?h('span',{className:'spin',style:{width:14,height:14,borderWidth:2}}):h(SChk,{s:13}),'บันทึก')
+    ):h('div',{className:'g6c'},
+      [['เป้าหมาย',data.target,'','เส้น/เดือน'],['ขายจริง',data.actual,'gn','เส้น'],['ยางจอง',reserved,'bl','เส้น'],['คงเหลือ',remaining>0?'-'+remaining:'✓',remaining>0?'rd':'gn',''],['ขาย/วัน',daily,'yw','เส้น/วัน'],['รายการจอง',reservations.filter(r=>r.branch===branch).length,'','รายการ']].map(([lbl,val,clr,unit],i)=>
+        h('div',{key:i,className:'sc'},h('div',{className:'sc-l'},lbl),h('div',{className:'sc-v mono'+(clr?' '+clr:''),style:{fontSize:18}},val),unit&&h('div',{className:'sc-s'},unit))
+      )
+    )
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   MENU 2 – Dashboard ประสิทธิภาพ
-═══════════════════════════════════════════════════ */
-function MenuDashboard({branch, branchData, reservations, isAdmin, onUpdate}){
-  const [view, setView] = useState(isAdmin?'all':'mine');
-
-  /* คำนวณยอดรวมทุกสาขา */
-  const allStats = useMemo(()=>{
-    let tgt=0, act=0, res=0;
-    BRANCHES.forEach(b=>{
-      const d = branchData[b]||{target:0,actual:0};
-      const r = reservations.filter(x=>x.branch===b&&x.status!=='arrived').reduce((s,x)=>s+x.qty,0);
-      tgt+=d.target; act+=d.actual; res+=r;
-    });
-    const rate = tgt>0?((act+res)/tgt*100):0;
-    return {tgt, act, res, gap:Math.max(0,tgt-act), rate};
+/* ── MENU 2 — DASHBOARD ── */
+function Menu2({branch,branchData,reservations,isAdmin,onUpdate,loading}){
+  const [view,setView]=useState(isAdmin?'all':'mine');
+  const allStats=useMemo(()=>{
+    let tgt=0,act=0,res=0;
+    BRANCHES.forEach(b=>{const d=branchData[b]||{target:0,actual:0};const r=reservations.filter(x=>x.branch===b&&x.status!=='arrived').reduce((s,x)=>s+x.qty,0);tgt+=d.target;act+=d.actual;res+=r;});
+    const rate=tgt>0?((act+res)/tgt*100):0;
+    return {tgt,act,res,gap:Math.max(0,tgt-act),rate};
   },[branchData,reservations]);
-
-  /* จัดอันดับ */
-  const rankings = useMemo(()=>
-    BRANCHES.map(b=>{
-      const d = branchData[b]||{target:0,actual:0};
-      const r = reservations.filter(x=>x.branch===b&&x.status!=='arrived').reduce((s,x)=>s+x.qty,0);
-      const rate = d.target>0?((d.actual+r)/d.target*100):0;
-      return {b, rate, actual:d.actual, target:d.target, res:r};
-    }).sort((a,z)=>z.rate-a.rate),
-    [branchData,reservations]
-  );
-
+  const rankings=useMemo(()=>BRANCHES.map(b=>{
+    const d=branchData[b]||{target:0,actual:0};
+    const r=reservations.filter(x=>x.branch===b&&x.status!=='arrived').reduce((s,x)=>s+x.qty,0);
+    const rate=d.target>0?((d.actual+r)/d.target*100):0;
+    return {b,rate,actual:d.actual,target:d.target,res:r};
+  }).sort((a,z)=>z.rate-a.rate),[branchData,reservations]);
   return h('div',null,
     h('div',{className:'sh'},
-      h('div',null,
-        h('div',{className:'st'},'ประสิทธิภาพ'),
-        h('div',{className:'ss'}, isAdmin?'ทุกสาขา':`สาขา ${branch}`)
-      ),
-      isAdmin && h('div',{className:'fx g2'},
-        [['all','🌐 ทั้งหมด'],['mine','🏢 สาขาฉัน']].map(([v,l])=>
-          h('button',{key:v,className:`btn bsm ${view===v?'bp':'bo'}`,onClick:()=>setView(v)},l)
-        )
+      h('div',null,h('div',{className:'st'},'ประสิทธิภาพสาขา'),h('div',{className:'ss'},isAdmin?'ข้อมูลรวมทุกสาขา':'สาขา '+branch)),
+      isAdmin&&h('div',{className:'fx g2'},
+        [['all','🌐 ทั้งหมด'],['mine','🏢 สาขาฉัน']].map(([v,l])=>h('button',{key:v,className:'btn bsm '+(view===v?'bp':'bo'),onClick:()=>setView(v)},l))
       )
     ),
-
-    /* ── VIEW: ทั้งหมด (admin) ── */
-    (isAdmin && view==='all') && h('div',null,
-
-      /* big metric */
+    loading?h('div',{className:'emp'},h('div',{className:'spin'})):null,
+    !loading&&isAdmin&&view==='all'&&h('div',null,
       h('div',{className:'mbox'},
-        h('div',{className:'sl',style:{marginBottom:8}},'🎯 ยอดรวมทุกสาขา · ประจำเดือน'),
-        h('div',{className:`mnum ${rateColor(allStats.rate)}`},
-          allStats.rate.toFixed(1),
-          h('span',{className:'munit'},' %')
-        ),
-        h('div',{className:'tsm mu',style:{marginTop:6}},
-          `(ขายจริง ${allStats.act} + จอง ${allStats.res}) ÷ เป้า ${allStats.tgt} เส้น`
+        h('div',{className:'sc-l mb3'},'🎯 Achievement Rate รวมทุกสาขา'),
+        h('div',{className:'mnum '+rCol(allStats.rate)},allStats.rate.toFixed(1),h('span',{className:'munit'},' %')),
+        h('div',{className:'tsm mu mt2'},'(ขายจริง '+allStats.act+' + จอง '+allStats.res+') ÷ เป้า '+allStats.tgt+' เส้น')
+      ),
+      h('div',{className:'g4c'},
+        [{l:'เป้าหมายรวม',v:allStats.tgt,c:'',u:'เส้น/เดือน'},{l:'ขายจริงรวม',v:allStats.act,c:'gn',u:'เส้น'},{l:'ยางจองรวม',v:allStats.res,c:'bl',u:'เส้น'},{l:'คงเหลือรวม',v:allStats.gap,c:'rd',u:'เส้น'}].map(({l,v,c,u},i)=>
+          h('div',{key:i,className:'sc'},h('div',{className:'sc-l'},l),h('div',{className:'sc-v mono'+(c?' '+c:'')},v),h('div',{className:'sc-s'},u))
         )
       ),
-
-      /* summary stats */
-      h('div',{className:'sg2'},
-        h('div',{className:'sc'},
-          h('div',{className:'sl'},'เป้าหมายรวม'),
-          h('div',{className:'sv mono'},allStats.tgt),
-          h('div',{className:'ss2'},'เส้น / เดือน')
-        ),
-        h('div',{className:'sc'},
-          h('div',{className:'sl'},'ขายจริงรวม'),
-          h('div',{className:'sv mono gn'},allStats.act),
-          h('div',{className:'ss2'},'เส้น')
-        ),
-        h('div',{className:'sc'},
-          h('div',{className:'sl'},'ยางจองรวม'),
-          h('div',{className:'sv mono bl'},allStats.res),
-          h('div',{className:'ss2'},'เส้น')
-        ),
-        h('div',{className:'sc'},
-          h('div',{className:'sl'},'คงเหลือรวม'),
-          h('div',{className:'sv mono rd2'},allStats.gap),
-          h('div',{className:'ss2'},'เส้น')
-        )
-      ),
-
-      /* ranking */
       h('div',{className:'card'},
-        h('div',{className:'fxa g2 mb3'},
-          h(SvgTrophy),
-          h('span',{className:'bld'},'อันดับสาขาตามอัตราความสำเร็จ')
-        ),
+        h('div',{className:'fxa g2 mb3'},h(STrp),h('span',{className:'bld'},'อันดับสาขาตามอัตราความสำเร็จ')),
         rankings.map((r,i)=>{
-          const col  = rateColor(r.rate);
-          const pfcl = ratePfill(r.rate);
-          const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+          const col=rCol(r.rate);const pfcl=rPf(r.rate);
+          const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
           return h('div',{key:r.b,className:'rr'},
-            h('span',{style:{fontSize:13,width:22,textAlign:'right',color:'var(--t3)',fontFamily:'var(--mono)'}},`${medal||'#'+  (i+1)}`),
-            h('div',{style:{width:58,flexShrink:0}},
-              h('div',{className:'mono bld',style:{fontSize:15}},`B${r.b}`),
-              h('div',{className:'txs mu'},`${r.actual}/${r.target}`)
-            ),
+            h('span',{style:{fontFamily:'var(--mono)',fontSize:12,color:'var(--t3)',width:24,textAlign:'right',flexShrink:0}},medal||'#'+(i+1)),
+            h('div',{style:{width:60,flexShrink:0}},h('div',{className:'mono bld',style:{fontSize:15}},'B'+r.b),h('div',{className:'txs mu'},r.actual+'/'+r.target)),
             h('div',{style:{flex:1}},
-              h('div',{className:'fxb txs mb1'},
-                h('span',null,`จอง +${r.res}`),
-                h('span',{className:`mono sem ${col}`},`${r.rate.toFixed(1)}%`)
-              ),
-              h('div',{className:'pb',style:{height:5,marginBottom:0}},
-                h('div',{className:`pf ${pfcl}`,style:{width:`${Math.min(100,r.rate)}%`}})
-              )
+              h('div',{className:'fxb txs mb2'},h('span',{className:'mu'},'จอง +'+r.res),h('span',{className:'mono sem '+col},r.rate.toFixed(1)+'%')),
+              h('div',{className:'pb',style:{height:5}},h('div',{className:'pf '+pfcl,style:{width:Math.min(100,r.rate)+'%'}}))
             )
           );
         })
       )
     ),
-
-    /* ── VIEW: สาขาเดียว ── */
-    (view==='mine' || !isAdmin) && h('div',null,
-      h(BranchPerfCard,{
-        branch, data:branchData[branch]||{target:80,actual:0},
-        reservations, onUpdate
-      }),
-      isAdmin && h('div',null,
-        h('div',{className:'st mb3',style:{marginTop:4}},'สาขาอื่นๆ ทั้งหมด'),
-        BRANCHES.filter(b=>b!==branch).map(b=>
-          h(BranchPerfCard,{key:b, branch:b, data:branchData[b]||{target:80,actual:0}, reservations, onUpdate})
-        )
+    !loading&&(view==='mine'||!isAdmin)&&h('div',null,
+      h(BPCard,{branch,data:branchData[branch]||{target:80,actual:0},reservations,onUpdate}),
+      isAdmin&&h('div',null,
+        h('div',{className:'st mb4',style:{marginTop:4}},'สาขาอื่นๆ ทั้งหมด'),
+        h('div',{className:'dash-2col'},BRANCHES.filter(b=>b!==branch).map(b=>h(BPCard,{key:b,branch:b,data:branchData[b]||{target:80,actual:0},reservations,onUpdate})))
       )
     )
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   MENU 3 – ตารางนัดประจำวัน
-═══════════════════════════════════════════════════ */
-function MenuSchedule({branch, reservations, onArrived, onEdit, onDelete, isAdmin}){
-  const [selDate, setSelDate] = useState(TODAY);
-  const [search,  setSearch]  = useState('');
-  const [filt,    setFilt]    = useState('all');
-
-  function changeDay(n){ setSelDate(d=>addDays(d,n)); }
-
-  const isToday   = selDate===TODAY;
-  const dateLabel = fmtDate(selDate);
-  const dayLabel  = fmtDay(selDate);
-
-  const base = useMemo(()=>{
-    let l = reservations.filter(r=>r.serviceDate===selDate);
-    if(!isAdmin) l = l.filter(r=>r.branch===branch);
-    return l;
-  },[reservations,selDate,branch,isAdmin]);
-
-  const cnts = useMemo(()=>({
-    total:   base.length,
-    arrived: base.filter(r=>r.status==='arrived').length,
-    overdue: base.filter(r=>isOverdue(r)).length,
-  }),[base]);
-
-  const list = useMemo(()=>{
-    let l = base;
-    if(filt==='arrived') l = l.filter(r=>r.status==='arrived');
-    else if(filt==='overdue') l = l.filter(r=>isOverdue(r));
-    else if(filt==='upcoming') l = l.filter(r=>r.status==='upcoming'&&!isOverdue(r));
-    if(search.trim()) l = l.filter(r=>r.customerName.includes(search)||r.phone.includes(search));
-    return [...l].sort((a,b)=>a.customerName.localeCompare(b.customerName,'th'));
+/* ── MENU 3 — SCHEDULE ── */
+function Menu3({branch,reservations,onArrived,onEdit,onDelete,isAdmin,loading}){
+  const [selDate,setSelDate]=useState(todayStr());
+  const [search,setSearch]=useState('');
+  const [filt,setFilt]=useState('all');
+  const isToday=selDate===todayStr();
+  const base=useMemo(()=>{let l=reservations.filter(r=>r.service_date===selDate);if(!isAdmin)l=l.filter(r=>r.branch===branch);return l;},[reservations,selDate,branch,isAdmin]);
+  const cnts=useMemo(()=>({total:base.length,arrived:base.filter(r=>r.status==='arrived').length,overdue:base.filter(r=>isOv(r)).length}),[base]);
+  const list=useMemo(()=>{
+    let l=base;
+    if(filt==='arrived')l=l.filter(r=>r.status==='arrived');
+    else if(filt==='overdue')l=l.filter(r=>isOv(r));
+    else if(filt==='upcoming')l=l.filter(r=>r.status==='upcoming'&&!isOv(r));
+    if(search.trim())l=l.filter(r=>r.customer_name.includes(search)||r.phone.includes(search));
+    return [...l].sort((a,b)=>a.customer_name.localeCompare(b.customer_name,'th'));
   },[base,filt,search]);
-
   return h('div',null,
     h('div',{className:'sh'},
-      h('div',null,
-        h('div',{className:'st'},'ตารางนัดประจำวัน'),
-        h('div',{className:'ss'}, isAdmin?'ทุกสาขา':`สาขา ${branch}`)
-      ),
-      isToday && h('span',{className:'badge bgg'},'● แบบเรียลไทม์')
+      h('div',null,h('div',{className:'st'},'ตารางนัดประจำวัน'),h('div',{className:'ss'},isAdmin?'ทุกสาขา':'สาขา '+branch)),
+      isToday&&h('span',{className:'badge bgg'},'● เรียลไทม์')
     ),
-
-    /* date navigation */
     h('div',{className:'dnav'},
-      h('button',{className:'dnb',onClick:()=>changeDay(-1)}, h(SvgLeft)),
-      h('div',{className:'dinfo'},
-        h('div',{className:'dinfo-main'}, isToday ? '📅 วันนี้' : dateLabel),
-        h('div',{className:'dinfo-sub'}, isToday ? dateLabel+' · '+dayLabel : dayLabel)
-      ),
-      h('button',{className:'dnb',onClick:()=>changeDay(1)}, h(SvgRight))
+      h('button',{className:'dnb',onClick:()=>setSelDate(d=>addDays(d,-1))},h(SL)),
+      h('div',{className:'d-info'},h('div',{className:'d-main'},isToday?'📅 วันนี้':fmtDate(selDate)),h('div',{className:'d-sub'},isToday?fmtDate(selDate)+' · '+fmtDay(selDate):fmtDay(selDate))),
+      h('button',{className:'dnb',onClick:()=>setSelDate(d=>addDays(d,1))},h(SR))
     ),
-
-    /* day stats */
-    h('div',{className:'sg3'},
-      h('div',{className:'sc tc'},
-        h('div',{className:'sv mono',style:{fontSize:24}}, cnts.total),
-        h('div',{className:'sl'},'คาดว่าจะมา')
-      ),
-      h('div',{className:'sc tc'},
-        h('div',{className:'sv mono gn',style:{fontSize:24}}, cnts.arrived),
-        h('div',{className:'sl'},'มาแล้ว ✓')
-      ),
-      h('div',{className:'sc tc'},
-        h('div',{className:'sv mono rd2',style:{fontSize:24}}, cnts.overdue),
-        h('div',{className:'sl'},'ติดตาม ⚠')
+    h('div',{className:'g2c'},
+      [{l:'คาดว่าจะมา',v:cnts.total,c:''},{l:'มาแล้ว ✓',v:cnts.arrived,c:'gn'},{l:'ต้องติดตาม ⚠',v:cnts.overdue,c:'rd'},{l:'รอรับบริการ',v:cnts.total-cnts.arrived-cnts.overdue,c:'bl'}].map(({l,v,c},i)=>
+        h('div',{key:i,className:'sc tc'},h('div',{className:'sc-v mono'+(c?' '+c:'')},v),h('div',{className:'sc-l'},l))
       )
     ),
-
-    /* search */
-    h('div',{className:'sbar'},
-      h(SvgSearch), h('input',{placeholder:'ค้นหาชื่อหรือเบอร์โทร...',value:search,onChange:e=>setSearch(e.target.value)})
-    ),
-
-    /* filter chips */
+    h('div',{className:'sbar'},h(SSrc),h('input',{placeholder:'ค้นหาชื่อหรือเบอร์โทร...',value:search,onChange:e=>setSearch(e.target.value)})),
     h('div',{className:'fchips'},
-      [['all','ทั้งหมด'],['upcoming','รอรับบริการ'],['arrived','มาแล้ว ✓'],['overdue','ติดตาม ⚠']].map(([v,l])=>
-        h('button',{key:v,className:`fc${filt===v?' on':''}`,onClick:()=>setFilt(v)},l)
-      )
+      [['all','ทั้งหมด'],['upcoming','รอรับบริการ'],['arrived','มาแล้ว ✓'],['overdue','ติดตาม ⚠']].map(([v,l])=>h('button',{key:v,className:'fc'+(filt===v?' on':''),onClick:()=>setFilt(v)},l))
     ),
-
-    list.length===0
-      ? h('div',{className:'emp'},
-          h('div',{className:'emp-ico'},'📅'),
-          h('div',{className:'emp-t'},'ไม่มีรายการนัด'),
-          h('div',{className:'emp-s'},`ไม่มีลูกค้าที่นัดเข้ารับบริการ\nสำหรับ${isToday?'วันนี้':dateLabel}`)
-        )
-      : list.map(r=>h(ResCard,{key:r.id, res:r, onArrived, onEdit, onDelete, showBranch:isAdmin}))
+    loading?h('div',{className:'emp'},h('div',{className:'spin'})):
+    list.length===0?h('div',{className:'emp'},h('div',{className:'emp-ico'},'📅'),h('div',{className:'emp-t'},'ไม่มีรายการนัด'),h('div',{className:'emp-s'},'ไม่มีลูกค้านัดบริการ\nสำหรับ'+(isToday?'วันนี้':fmtDate(selDate)))):
+    h('div',{className:'res-grid'},list.map(r=>h(ResCard,{key:r.id,res:r,onArrived,onEdit,onDelete,showBranch:isAdmin})))
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   ROOT APP
-═══════════════════════════════════════════════════ */
+/* ── ROOT APP ── */
 function App(){
-  const [branch,      setBranch]      = useState('003');
-  const [tab,         setTab]         = useState(0);
-  const [showBranchM, setShowBranchM] = useState(false);
-  const [role,        setRole]        = useState('staff');
-  const [reservations,setReservations]= useState(SAMPLE_RES);
-  const [branchData,  setBranchData]  = useState(SAMPLE_BD);
-  const [toasts,      setToasts]      = useState([]);
-  const [editingRes,  setEditingRes]  = useState(null);
+  const [branch,setBranch]=useState('003');
+  const [tab,setTab]=useState(0);
+  const [showBM,setShowBM]=useState(false);
+  const [role,setRole]=useState('staff');
+  const [reservations,setReservations]=useState([]);
+  const [branchData,setBranchData]=useState({});
+  const [toasts,setToasts]=useState([]);
+  const [editingRes,setEditingRes]=useState(null);
+  const [loadR,setLoadR]=useState(true);
+  const [loadB,setLoadB]=useState(true);
+  const [saving,setSaving]=useState(false);
+  const [synced,setSynced]=useState(false);
+  const isAdmin=role==='admin';
 
-  const isAdmin = role === 'admin';
-
-  /* toast helper */
-  function toast(msg, type='success'){
-    const id = uid();
-    setToasts(t=>[...t,{id,message:msg,type}]);
-    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)), 3200);
+  function toast(msg,type){
+    const id=Math.random().toString(36).slice(2);
+    const m={success:{cls:'tg',ico:'✅'},error:{cls:'te',ico:'❌'},warn:{cls:'tw',ico:'⚠️'}};
+    const t=m[type]||m.success;
+    setToasts(p=>[...p,{id,msg,cls:t.cls,ico:t.ico}]);
+    setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)),3500);
   }
 
-  /* handlers */
-  function handleSave(data){
-    setReservations(prev=>{
-      const i = prev.findIndex(r=>r.id===data.id);
-      if(i>=0){ const n=[...prev]; n[i]=data; return n; }
-      return [...prev,data];
-    });
-    toast(data.id&&reservations.find(r=>r.id===data.id) ? '✅ อัปเดตการจองแล้ว' : '✅ บันทึกการจองใหม่แล้ว');
+  async function loadRes(){
+    setLoadR(true);
+    const {data,error}=await sb.from('tt_reservations').select('*').order('service_date');
+    if(error)toast('โหลดข้อมูลไม่สำเร็จ: '+error.message,'error');
+    else setReservations(data||[]);
+    setLoadR(false);
   }
 
-  function handleArrived(id){
-    setReservations(prev=>prev.map(r=>r.id===id?{...r,status:'arrived'}:r));
-    toast('✅ ยืนยันลูกค้าเข้ารับบริการแล้ว');
+  async function loadBD(){
+    setLoadB(true);
+    const {data,error}=await sb.from('tt_branch_data').select('*');
+    if(error)toast('โหลดข้อมูลสาขาไม่สำเร็จ','error');
+    else{const m={};(data||[]).forEach(r=>{m[r.branch]={target:r.target,actual:r.actual};});setBranchData(m);}
+    setLoadB(false);
   }
 
-  function handleDelete(id){
-    setReservations(prev=>prev.filter(r=>r.id!==id));
-    toast('ลบรายการแล้ว','error');
+  useEffect(()=>{
+    loadRes(); loadBD();
+    const chR=sb.channel('tt_res_ch')
+      .on('postgres_changes',{event:'*',schema:'public',table:'tt_reservations'},p=>{
+        if(p.eventType==='INSERT')setReservations(prev=>{if(prev.find(r=>r.id===p.new.id))return prev;return [...prev,p.new];});
+        else if(p.eventType==='UPDATE')setReservations(prev=>prev.map(r=>r.id===p.new.id?p.new:r));
+        else if(p.eventType==='DELETE')setReservations(prev=>prev.filter(r=>r.id!==p.old.id));
+      }).subscribe(s=>{if(s==='SUBSCRIBED')setSynced(true);});
+    const chB=sb.channel('tt_bd_ch')
+      .on('postgres_changes',{event:'*',schema:'public',table:'tt_branch_data'},p=>{
+        if(p.new){const r=p.new;setBranchData(prev=>({...prev,[r.branch]:{target:r.target,actual:r.actual}}));}
+      }).subscribe();
+    return()=>{sb.removeChannel(chR);sb.removeChannel(chB);};
+  },[]);
+
+  async function handleSave(data){
+    setSaving(true);
+    const isEdit=reservations.some(r=>r.id===data.id);
+    const payload={id:data.id,branch:data.branch,customer_name:data.customer_name,phone:data.phone,brand:data.brand,model:data.model,size:data.size,qty:data.qty,reservation_date:data.reservation_date,service_date:data.service_date,status:data.status||'upcoming'};
+    if(isEdit){
+      const {error}=await sb.from('tt_reservations').update(payload).eq('id',data.id);
+      if(error)toast('อัปเดตไม่สำเร็จ: '+error.message,'error');else toast('อัปเดตการจองแล้ว');
+    }else{
+      const {error}=await sb.from('tt_reservations').insert([payload]);
+      if(error)toast('บันทึกไม่สำเร็จ: '+error.message,'error');else toast('บันทึกการจองใหม่แล้ว');
+    }
+    setSaving(false);setEditingRes(null);
   }
 
-  function handleUpdate(b,data){
-    setBranchData(prev=>({...prev,[b]:data}));
-    toast(`✅ อัปเดตข้อมูลสาขา ${b} แล้ว`);
+  async function handleArrived(id){
+    const {error}=await sb.from('tt_reservations').update({status:'arrived'}).eq('id',id);
+    if(error)toast('อัปเดตสถานะไม่สำเร็จ','error');else toast('ยืนยันลูกค้าเข้ารับบริการแล้ว');
   }
 
-  /* edit from schedule → switch to menu 1 */
-  function handleEditFromSchedule(r){
-    setEditingRes(r);
-    setTab(0);
+  async function handleDelete(id){
+    const {error}=await sb.from('tt_reservations').delete().eq('id',id);
+    if(error)toast('ลบไม่สำเร็จ','error');else toast('ลบรายการแล้ว','error');
   }
 
-  /* overdue badge count */
-  const overdueCount = useMemo(()=>
-    reservations.filter(r=>(isAdmin||r.branch===branch)&&isOverdue(r)).length,
-    [reservations,branch,isAdmin]
-  );
+  async function handleUpdateBD(b,data){
+    const {error}=await sb.from('tt_branch_data').upsert({branch:b,target:data.target,actual:data.actual});
+    if(error)toast('อัปเดตข้อมูลสาขาไม่สำเร็จ','error');else toast('อัปเดตสาขา '+b+' แล้ว');
+  }
 
-  /* nav tabs config */
-  const TABS = [
-    {icon:h(SvgReserv,{s:22}), label:'รายการจอง'},
-    {icon:h(SvgDash,   {s:22}), label:'ประสิทธิภาพ'},
-    {icon:h(SvgCal,    {s:22}), label:'ตารางนัด'},
+  function handleEditFromSchedule(r){setEditingRes(r);setTab(0);}
+
+  const overdueCount=useMemo(()=>reservations.filter(r=>(isAdmin||r.branch===branch)&&isOv(r)).length,[reservations,branch,isAdmin]);
+
+  const TABS=[
+    {icon:h(SDoc,{s:20}),label:'รายการจอง'},
+    {icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},
+    {icon:h(SCal,{s:20}),label:'ตารางนัด'},
   ];
 
-  return h('div',{style:{display:'flex',flexDirection:'column',height:'100vh'}},
+  const PAGE=[
+    {t:'รายการจอง',s:'สาขา '+branch},
+    {t:'ประสิทธิภาพ',s:isAdmin?'ทุกสาขา':'สาขา '+branch},
+    {t:'ตารางนัดประจำวัน',s:isAdmin?'ทุกสาขา':'สาขา '+branch},
+  ];
 
-    /* ── HEADER ── */
-    h('div',{className:'hdr'},
-      h('div',{className:'logo'},
-        h('div',{className:'logo-mark'},'TT'),
-        h('div',{className:'logo-text'}, h('b',null,'Tire'),'Track')
+  return h('div',{id:'app'},
+
+    /* SIDEBAR */
+    h('div',{className:'sidebar'},
+      h('div',{className:'sb-logo'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track')),
+      h('div',{className:'sb-branch'},
+        h('div',{className:'sb-lbl'},'สาขาที่ทำงาน'),
+        h('div',{className:'sb-pill',onClick:()=>setShowBM(true)},
+          h('span',{className:'sb-code'},'B'+branch),
+          h('div',{className:'sb-live'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'ออนไลน์':'กำลังเชื่อม')
+        )
       ),
-      h('div',{className:'fxa g2'},
-        h('div',{
-          className:'role-tag',
-          onClick:()=>setRole(r=>r==='admin'?'staff':'admin'),
-          title:'แตะเพื่อสลับบทบาท'
-        },
-          h('div',{className:'role-dot',style:{background:isAdmin?'var(--or)':'var(--ac)'}}),
-          isAdmin?'ADMIN':'STAFF'
-        ),
-        h('div',{className:'bpill',onClick:()=>setShowBranchM(true)},
-          h('div',{className:'ldot'}),
-          `B${branch}`
+      h('div',{className:'sb-nav'},
+        TABS.map(({icon,label},i)=>h('button',{key:i,className:'nav-item'+(tab===i?' on':''),onClick:()=>setTab(i)},
+          icon,label,i===2&&overdueCount>0&&h('span',{className:'nav-badge'},overdueCount>9?'9+':overdueCount)
+        ))
+      ),
+      h('div',{className:'sb-role'},
+        h('div',{className:'sb-lbl'},'บทบาท'),
+        h('button',{className:'role-btn',onClick:()=>setRole(r=>r==='admin'?'staff':'admin')},
+          h('div',{className:'rdot',style:{background:isAdmin?'var(--or)':'var(--ac)'}}),
+          h('div',{className:'role-info'},h('div',{className:'role-name'},isAdmin?'ผู้ดูแลระบบ (Admin)':'พนักงานสาขา (Staff)'),h('div',{className:'role-hint'},'แตะเพื่อสลับบทบาท'))
         )
       )
     ),
 
-    /* ── CONTENT ── */
-    h('div',{className:'main'},
-      tab===0 && h(MenuReservations,{branch,reservations,onSave:handleSave,onArrived:handleArrived,onDelete:handleDelete,editingRes,setEditingRes}),
-      tab===1 && h(MenuDashboard,{branch,branchData,reservations,isAdmin,onUpdate:handleUpdate}),
-      tab===2 && h(MenuSchedule,{branch,reservations,onArrived:handleArrived,onEdit:handleEditFromSchedule,onDelete:handleDelete,isAdmin})
-    ),
+    /* MAIN */
+    h('div',{className:'main-area'},
 
-    /* ── BOTTOM NAV ── */
-    h('div',{className:'bnav'},
-      TABS.map(({icon,label},i)=>
-        h('button',{key:i,className:`ntab${tab===i?' on':''}`,onClick:()=>setTab(i)},
-          icon, label,
-          i===2 && overdueCount>0 && h('div',{className:'nbadge'},overdueCount>9?'9+':overdueCount)
+      /* TOPBAR desktop */
+      h('div',{className:'topbar'},
+        h('div',{className:'tb-left'},h('div',{className:'tb-title'},PAGE[tab].t),h('div',{className:'tb-sub'},PAGE[tab].s)),
+        h('div',{className:'tb-right'},
+          h('div',{className:'sync-chip'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'ซิงก์ Realtime':'กำลังเชื่อมต่อ'),
+          h('button',{className:'btn bo bsm',onClick:()=>{loadRes();loadBD();}},h(SRef),'รีเฟรช')
         )
+      ),
+
+      /* MOBILE HEADER */
+      h('div',{className:'m-hdr'},
+        h('div',{className:'m-hdr-l'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track')),
+        h('div',{className:'m-hdr-r'},
+          h('div',{className:'sync-chip'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'สด':'...'),
+          h('div',{className:'sb-pill',style:{padding:'4px 10px'},onClick:()=>setShowBM(true)},
+            h('div',{className:'ldot'}),h('span',{style:{fontFamily:'var(--mono)',fontSize:13,fontWeight:600,color:'var(--ac)'}},'B'+branch)
+          ),
+          h('button',{className:'btn bo bxs',style:{fontSize:11},onClick:()=>setRole(r=>r==='admin'?'staff':'admin')},
+            h('div',{className:'rdot',style:{width:6,height:6,background:isAdmin?'var(--or)':'var(--ac)'}}),
+            isAdmin?'ADMIN':'STAFF'
+          )
+        )
+      ),
+
+      /* PAGE CONTENT */
+      h('div',{className:'page'},
+        tab===0&&h(Menu1,{branch,reservations,loading:loadR,onSave:handleSave,onArrived:handleArrived,onDelete:handleDelete,editingRes,setEditingRes,saving}),
+        tab===1&&h(Menu2,{branch,branchData,reservations,isAdmin,onUpdate:handleUpdateBD,loading:loadB}),
+        tab===2&&h(Menu3,{branch,reservations,onArrived:handleArrived,onEdit:handleEditFromSchedule,onDelete:handleDelete,isAdmin,loading:loadR})
+      ),
+
+      /* BOTTOM NAV mobile */
+      h('div',{className:'bnav'},
+        TABS.map(({icon,label},i)=>h('button',{key:i,className:'ntab'+(tab===i?' on':''),onClick:()=>setTab(i)},
+          icon,label,i===2&&overdueCount>0&&h('div',{className:'nb'},overdueCount>9?'9+':overdueCount)
+        ))
       )
     ),
 
-    /* ── MODALS ── */
-    showBranchM && h(BranchModal,{cur:branch,onSelect:setBranch,onClose:()=>setShowBranchM(false)}),
-
-    /* ── TOASTS ── */
+    showBM&&h(BranchModal,{cur:branch,onSelect:setBranch,onClose:()=>setShowBM(false)}),
     h(Toasts,{list:toasts})
   );
 }
 
-/* mount */
-ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+ReactDOM.createRoot(document.getElementById('app')).render(h(App));
 })();
 </script>
 </body>
