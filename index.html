@@ -741,26 +741,61 @@ function App(){
     setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)),3500);
   }
 
-  async function loadRes(){
+  // Track whether this is the initial load (show spinner) or a background refresh (silent)
+  const isFirstLoad = React.useRef(true);
+
+  async function loadRes(silent=false){
     if(!sb){ setLoadR(false); return; }
-    setLoadR(true);
+    if(!silent) setLoadR(true);
     try{
       const {data,error}=await sb.from('tt_reservations').select('*').order('service_date');
-      if(error)toast('โหลดข้อมูลไม่สำเร็จ: '+error.message,'error');
-      else setReservations(data||[]);
-    }catch(e){ toast('เชื่อมต่อฐานข้อมูลไม่ได้','error'); }
-    setLoadR(false);
+      if(error){ toast('โหลดข้อมูลไม่สำเร็จ: '+error.message,'error'); }
+      else if(data){
+        // Smart merge: update existing rows, add new ones, remove deleted ones.
+        // This avoids replacing the entire list (which would reset any in-flight UI state).
+        setReservations(prev=>{
+          const serverIds = new Set(data.map(r=>r.id));
+          const localIds  = new Set(prev.map(r=>r.id));
+          // Keep rows only the server has removed; add/update from server
+          const merged = data.map(serverRow=>{
+            const local = prev.find(r=>r.id===serverRow.id);
+            // If identical, keep local reference (no re-render churn)
+            if(local && JSON.stringify(local)===JSON.stringify(serverRow)) return local;
+            return serverRow;
+          });
+          // Preserve any local-only rows (optimistic inserts not yet confirmed by server)
+          prev.forEach(r=>{ if(!serverIds.has(r.id)) merged.push(r); });
+          return merged;
+        });
+      }
+    }catch(e){ if(!silent) toast('เชื่อมต่อฐานข้อมูลไม่ได้','error'); }
+    if(!silent) setLoadR(false);
+    isFirstLoad.current = false;
   }
 
-  async function loadBD(){
+  async function loadBD(silent=false){
     if(!sb){ setLoadB(false); return; }
-    setLoadB(true);
+    if(!silent) setLoadB(true);
     try{
       const {data,error}=await sb.from('tt_branch_data').select('*');
-      if(error)toast('โหลดข้อมูลสาขาไม่สำเร็จ','error');
-      else{const m={};(data||[]).forEach(r=>{m[r.branch]={target:r.target,actual:r.actual};});setBranchData(m);}
-    }catch(e){ toast('เชื่อมต่อฐานข้อมูลไม่ได้','error'); }
-    setLoadB(false);
+      if(error){ if(!silent) toast('โหลดข้อมูลสาขาไม่สำเร็จ','error'); }
+      else if(data){
+        // Smart merge: only update branches that actually changed
+        setBranchData(prev=>{
+          const next={...prev};
+          let changed=false;
+          data.forEach(r=>{
+            const p=prev[r.branch];
+            if(!p||p.target!==r.target||p.actual!==r.actual){
+              next[r.branch]={target:r.target,actual:r.actual};
+              changed=true;
+            }
+          });
+          return changed?next:prev; // return same reference if nothing changed = no re-render
+        });
+      }
+    }catch(e){ if(!silent) toast('เชื่อมต่อฐานข้อมูลไม่ได้','error'); }
+    if(!silent) setLoadB(false);
   }
 
   useEffect(()=>{
@@ -784,8 +819,12 @@ function App(){
       console.warn('Realtime unavailable, using polling:', e.message);
       setSynced(false);
     }
-    // Polling fallback (always on as a safety net; lightweight refetch)
-    pollTimer=setInterval(()=>{ loadRes(); loadBD(); }, 8000);
+    // Polling fallback (only when realtime is off; skips when a form is open to protect user input)
+    pollTimer=setInterval(()=>{
+      // Never refresh while user is actively filling in a form
+      if(document.querySelector('.sheet')) return;
+      loadRes(true); loadBD(true); // silent=true: no spinner, no error toast
+    }, 30000);
     return()=>{
       try{ if(chR)sb.removeChannel(chR); if(chB)sb.removeChannel(chB); }catch(e){}
       if(pollTimer)clearInterval(pollTimer);
@@ -813,7 +852,8 @@ function App(){
     }catch(e){ toast('บันทึกไม่สำเร็จ: '+(e.message||''),'error'); }
     // Rollback optimistic update if the DB write failed
     if(!ok) setReservations(prevSnapshot);
-    else { loadRes(); } // refetch to sync canonical state
+    // Note: no loadRes() here — optimistic update is already applied.
+    // Background polling (every 30s) will sync any discrepancies safely.
     setSaving(false);setEditingRes(null);
   }
 
@@ -864,7 +904,7 @@ function App(){
 
     /* SIDEBAR */
     h('div',{className:'sidebar'},
-      h('div',{className:'sb-logo'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.3'))),
+      h('div',{className:'sb-logo'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.4'))),
       h('div',{className:'sb-branch'},
         h('div',{className:'sb-lbl'},'สาขาที่ทำงาน'),
         h('div',{className:'sb-pill',onClick:()=>setShowBM(true)},
@@ -900,7 +940,7 @@ function App(){
 
       /* MOBILE HEADER */
       h('div',{className:'m-hdr'},
-        h('div',{className:'m-hdr-l'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.3'))),
+        h('div',{className:'m-hdr-l'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.4'))),
         h('div',{className:'m-hdr-r'},
           h('div',{className:'sync-chip'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'สด':'อัตโนมัติ'),
           h('div',{className:'sb-pill',style:{padding:'4px 10px'},onClick:()=>setShowBM(true)},
