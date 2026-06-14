@@ -299,7 +299,7 @@ try{
 
 /* ── CONSTANTS ── */
 const BRANCHES = ['003','009','010','012','014','048','050','096','107','143'];
-const BRANDS   = ['Bridgestone','Firestone','Dayton','Michelin','Continental','Goodyear','Dunlop','Pirelli','Yokohama','Hankook','Toyo','Maxxis'];
+const BRANDS   = ['Bridgestone','Firestone','Dayton','Michelin','Continental','Goodyear','Dunlop','Pirelli','Yokohama','Hankook','Toyo','Maxxis','อื่นๆ (Other)'];
 const SIZES    = ['195/65R15','205/55R16','215/55R17','225/45R18'];
 
 /* ── HELPERS ── */
@@ -600,51 +600,59 @@ function Menu2({branch,branchData,reservations,isAdmin,onUpdate,loading}){
 
 /* ── MENU 3 — SCHEDULE ── */
 function Menu3({branch,reservations,onArrived,onEdit,onDelete,isAdmin,loading}){
-  const [selDate,setSelDate]=useState(todayStr());
   const [search,setSearch]=useState('');
-  const [filt,setFilt]=useState('all');
-  const isToday=selDate===todayStr();
+  const [filt,setFilt]=useState('all'); // all | today | overdue
+
+  // Base: not yet arrived, scope by branch for staff
   const base=useMemo(()=>{
-    let l=reservations.filter(r=>r.service_date===selDate);
-    // Staff: only their branch; Admin: all branches
+    let l=reservations.filter(r=>r.status!=='arrived');
     if(!isAdmin)l=l.filter(r=>r.branch===branch);
     return l;
-  },[reservations,selDate,branch,isAdmin]);
-  const cnts=useMemo(()=>({total:base.length,arrived:base.filter(r=>r.status==='arrived').length,overdue:base.filter(r=>isOv(r)).length}),[base]);
+  },[reservations,branch,isAdmin]);
+
+  // Follow-up = due today OR overdue (service date is today or past, not arrived)
+  const followups=useMemo(()=>base.filter(r=>daysDiff(r.service_date)<=0),[base]);
+
+  const cnts=useMemo(()=>({
+    total:followups.length,
+    today:followups.filter(r=>daysDiff(r.service_date)===0).length,
+    overdue:followups.filter(r=>daysDiff(r.service_date)<0).length,
+  }),[followups]);
+
   const list=useMemo(()=>{
-    let l=base;
-    // Default "ทั้งหมด" tab: show only customers who haven't arrived yet and date not past
-    if(filt==='all')l=l.filter(r=>r.status==='upcoming'&&!isOv(r));
-    else if(filt==='arrived')l=l.filter(r=>r.status==='arrived');
-    else if(filt==='overdue')l=l.filter(r=>isOv(r));
-    else if(filt==='upcoming')l=l.filter(r=>r.status==='upcoming'&&!isOv(r));
+    let l=followups;
+    if(filt==='today')l=l.filter(r=>daysDiff(r.service_date)===0);
+    else if(filt==='overdue')l=l.filter(r=>daysDiff(r.service_date)<0);
     if(search.trim())l=l.filter(r=>r.customer_name.includes(search)||r.phone.includes(search));
-    return [...l].sort((a,b)=>a.customer_name.localeCompare(b.customer_name,'th'));
-  },[base,filt,search]);
+    // Most overdue first, then today
+    return [...l].sort((a,b)=>daysDiff(a.service_date)-daysDiff(b.service_date));
+  },[followups,filt,search]);
+
   return h('div',null,
     h('div',{className:'sh'},
-      h('div',null,h('div',{className:'st'},'ตารางนัดประจำวัน'),h('div',{className:'ss'},isAdmin?'ทุกสาขา':'สาขา '+branch)),
-      isToday&&h('span',{className:'badge bgg'},'● เรียลไทม์')
+      h('div',null,h('div',{className:'st'},'รายการติดตามลูกค้า'),h('div',{className:'ss'},(isAdmin?'ทุกสาขา':'สาขา '+branch)+' · ต้องติดตาม '+cnts.total+' ราย')),
+      cnts.total>0&&h('span',{className:'badge bgr'},'⚠ '+cnts.total+' ราย')
     ),
-    h('div',{className:'dnav'},
-      h('button',{className:'dnb',onClick:()=>setSelDate(d=>addDays(d,-1))},h(SL)),
-      h('div',{className:'d-info'},h('div',{className:'d-main'},isToday?'📅 วันนี้':fmtDate(selDate)),h('div',{className:'d-sub'},isToday?fmtDate(selDate)+' · '+fmtDay(selDate):fmtDay(selDate))),
-      h('button',{className:'dnb',onClick:()=>setSelDate(d=>addDays(d,1))},h(SR))
+    h('div',{className:'mbox',style:{background:cnts.overdue>0?'linear-gradient(135deg,rgba(240,64,96,.1),rgba(240,64,96,.04))':'linear-gradient(135deg,rgba(59,125,255,.1),rgba(99,102,241,.05))',borderColor:cnts.overdue>0?'rgba(240,64,96,.25)':'rgba(59,125,255,.22)'}},
+      h('div',{className:'sc-l mb3'},'📞 ลูกค้าที่ต้องติดตาม'),
+      h('div',{className:'mnum '+(cnts.overdue>0?'rd':'bl')},cnts.total),
+      h('div',{className:'tsm mu mt2'},'นัดวันนี้ '+cnts.today+' ราย · เกินกำหนด '+cnts.overdue+' ราย')
     ),
-    h('div',{className:'g2c'},
-      [{l:'คาดว่าจะมา',v:cnts.total,c:''},{l:'มาแล้ว ✓',v:cnts.arrived,c:'gn'},{l:'ต้องติดตาม ⚠',v:cnts.overdue,c:'rd'},{l:'รอรับบริการ',v:cnts.total-cnts.arrived-cnts.overdue,c:'bl'}].map(({l,v,c},i)=>
+    h('div',{className:'g3c'},
+      [{l:'ทั้งหมด',v:cnts.total,c:''},{l:'นัดวันนี้',v:cnts.today,c:'bl'},{l:'เกินกำหนด',v:cnts.overdue,c:'rd'}].map(({l,v,c},i)=>
         h('div',{key:i,className:'sc tc'},h('div',{className:'sc-v mono'+(c?' '+c:'')},v),h('div',{className:'sc-l'},l))
       )
     ),
     h('div',{className:'sbar'},h(SSrc),h('input',{placeholder:'ค้นหาชื่อหรือเบอร์โทร...',value:search,onChange:e=>setSearch(e.target.value)})),
     h('div',{className:'fchips'},
-      [['all','ทั้งหมด'],['upcoming','รอรับบริการ'],['arrived','มาแล้ว ✓'],['overdue','ติดตาม ⚠']].map(([v,l])=>h('button',{key:v,className:'fc'+(filt===v?' on':''),onClick:()=>setFilt(v)},l))
+      [['all','ทั้งหมด'],['today','นัดวันนี้ 📅'],['overdue','เกินกำหนด ⚠']].map(([v,l])=>h('button',{key:v,className:'fc'+(filt===v?' on':''),onClick:()=>setFilt(v)},l))
     ),
     loading?h('div',{className:'emp'},h('div',{className:'spin'})):
-    list.length===0?h('div',{className:'emp'},h('div',{className:'emp-ico'},'📅'),h('div',{className:'emp-t'},'ไม่มีรายการนัด'),h('div',{className:'emp-s'},'ไม่มีลูกค้านัดบริการ\nสำหรับ'+(isToday?'วันนี้':fmtDate(selDate)))):
+    list.length===0?h('div',{className:'emp'},h('div',{className:'emp-ico'},'✅'),h('div',{className:'emp-t'},'ไม่มีรายการต้องติดตาม'),h('div',{className:'emp-s'},'ลูกค้าทุกรายเข้ารับบริการ\nตามนัดเรียบร้อยแล้ว')):
     h('div',{className:'res-grid'},list.map(r=>h(ResCard,{key:r.id,res:r,onArrived,onEdit,onDelete,showBranch:isAdmin})))
   );
 }
+
 
 /* ── ROOT APP ── */
 function App(){
@@ -726,19 +734,24 @@ function App(){
     if(!sb){ toast('ยังไม่ได้เชื่อมต่อฐานข้อมูล','error'); return; }
     setSaving(true);
     const isEdit=reservations.some(r=>r.id===data.id);
+    const prevSnapshot=reservations;
     const payload={id:data.id,branch:data.branch,customer_name:data.customer_name,phone:data.phone,brand:data.brand,model:data.model,size:data.size,qty:data.qty,reservation_date:data.reservation_date,service_date:data.service_date,status:data.status||'upcoming'};
     // Optimistic UI update (works even when realtime is off)
     if(isEdit)setReservations(prev=>prev.map(r=>r.id===data.id?{...r,...payload}:r));
     else setReservations(prev=>[...prev,payload]);
+    let ok=false;
     try{
       if(isEdit){
         const {error}=await sb.from('tt_reservations').update(payload).eq('id',data.id);
-        if(error)toast('อัปเดตไม่สำเร็จ: '+error.message,'error');else toast('อัปเดตการจองแล้ว');
+        if(error)toast('อัปเดตไม่สำเร็จ: '+error.message,'error');else{ok=true;toast('อัปเดตการจองแล้ว');}
       }else{
         const {error}=await sb.from('tt_reservations').insert([payload]);
-        if(error)toast('บันทึกไม่สำเร็จ: '+error.message,'error');else toast('บันทึกการจองใหม่แล้ว');
+        if(error)toast('บันทึกไม่สำเร็จ: '+error.message,'error');else{ok=true;toast('บันทึกการจองใหม่แล้ว');}
       }
-    }catch(e){ toast('บันทึกไม่สำเร็จ','error'); }
+    }catch(e){ toast('บันทึกไม่สำเร็จ: '+(e.message||''),'error'); }
+    // Rollback optimistic update if the DB write failed
+    if(!ok) setReservations(prevSnapshot);
+    else { loadRes(); } // refetch to sync canonical state
     setSaving(false);setEditingRes(null);
   }
 
@@ -776,20 +789,20 @@ function App(){
   const TABS=[
     {icon:h(SDoc,{s:20}),label:'รายการจอง'},
     {icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},
-    {icon:h(SCal,{s:20}),label:'ตารางนัด'},
+    {icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'},
   ];
 
   const PAGE=[
     {t:'รายการจอง',s:'สาขา '+branch},
     {t:'ประสิทธิภาพ',s:isAdmin?'ทุกสาขา':'สาขา '+branch},
-    {t:'ตารางนัดประจำวัน',s:isAdmin?'ทุกสาขา':'สาขา '+branch},
+    {t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch},
   ];
 
   return h('div',{id:'app'},
 
     /* SIDEBAR */
     h('div',{className:'sidebar'},
-      h('div',{className:'sb-logo'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.0'))),
+      h('div',{className:'sb-logo'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.1'))),
       h('div',{className:'sb-branch'},
         h('div',{className:'sb-lbl'},'สาขาที่ทำงาน'),
         h('div',{className:'sb-pill',onClick:()=>setShowBM(true)},
@@ -825,7 +838,7 @@ function App(){
 
       /* MOBILE HEADER */
       h('div',{className:'m-hdr'},
-        h('div',{className:'m-hdr-l'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.0'))),
+        h('div',{className:'m-hdr-l'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.1'))),
         h('div',{className:'m-hdr-r'},
           h('div',{className:'sync-chip'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'สด':'อัตโนมัติ'),
           h('div',{className:'sb-pill',style:{padding:'4px 10px'},onClick:()=>setShowBM(true)},
