@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <title>TireTrack – ระบบจัดการจองยาง</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -34,7 +34,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 
 /* ─ SIDEBAR ─ */
 .sidebar{width:var(--sidebar);flex-shrink:0;background:var(--surf);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;z-index:40}
-.sb-logo{height:var(--hdr);display:flex;align-items:center;gap:11px;padding:0 20px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.sb-logo{height:calc(var(--hdr) + env(safe-area-inset-top,0));display:flex;align-items:center;gap:11px;padding:env(safe-area-inset-top,0) 20px 0;border-bottom:1px solid var(--bd);flex-shrink:0}
 .lmark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b7dff,#6366f1);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:-.5px}
 .lname{font-size:16px;font-weight:800;letter-spacing:-.4px}
 .lname b{color:var(--ac)}
@@ -65,14 +65,14 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;height:100vh;height:100dvh}
 
 /* ─ TOPBAR (desktop) ─ */
-.topbar{height:var(--hdr);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--surf);border-bottom:1px solid var(--bd);flex-shrink:0;gap:16px}
+.topbar{height:calc(var(--hdr) + env(safe-area-inset-top,0));display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0) 24px 0;background:var(--surf);border-bottom:1px solid var(--bd);flex-shrink:0;gap:16px}
 .tb-left{}
 .tb-title{font-size:17px;font-weight:700;letter-spacing:-.3px}
 .tb-sub{font-size:12px;color:var(--t2);margin-top:1px}
 .tb-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
 
 /* ─ MOBILE HEADER ─ */
-.m-hdr{display:none;height:var(--hdr);align-items:center;justify-content:space-between;padding:0 14px;background:var(--surf);border-bottom:1px solid var(--bd);flex-shrink:0;position:sticky;top:0;z-index:30}
+.m-hdr{display:none;height:calc(var(--hdr) + env(safe-area-inset-top,0));align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0) 14px 0;background:var(--surf);border-bottom:1px solid var(--bd);flex-shrink:0;position:sticky;top:0;z-index:30}
 .m-hdr-l{display:flex;align-items:center;gap:9px}
 .m-hdr-r{display:flex;align-items:center;gap:7px}
 
@@ -300,6 +300,43 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .tsm{font-size:13px}.txs{font-size:11px}
 .upr{text-transform:uppercase;letter-spacing:.5px}
 .trunc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ══ LANDSCAPE OVERRIDES (must be last to win cascade) ══ */
+/* LANDSCAPE on narrow devices (phone/tablet landscape using bottom-nav layout):
+   wide but short -> compact aggressively so everything fits one screen */
+@media(max-width:899px) and (orientation:landscape){
+  :root{--hdr:42px}
+  .m-hdr{padding-left:12px;padding-right:12px}
+  .lmark{width:26px;height:26px;border-radius:7px;font-size:10px}
+  .lname{font-size:13px}
+  .page{padding:8px 12px}
+  .sh{margin-bottom:7px}
+  .st{font-size:15px}
+  .ss{font-size:11px}
+  /* hide the large metric banner in tight landscape - stat cards cover it */
+  .mbox-hide-land{display:none}
+  .mbox{padding:8px 14px;margin-bottom:8px}
+  .mnum{font-size:24px}
+  .munit{font-size:13px}
+  .g2c,.g3c{margin-bottom:6px;gap:6px}
+  .sc{padding:5px 9px}
+  .sc-v{font-size:15px}
+  .sc-l{font-size:8px;margin-bottom:2px}
+  .sc-s{font-size:9px;margin-top:1px}
+  .sbar{height:36px;margin-bottom:8px}
+  .fchips{margin-bottom:8px}
+  .fc{padding:4px 12px;font-size:12px}
+  .card{padding:10px;margin-bottom:8px}
+  .ntab{padding:5px 0 4px;font-size:9px}
+  .ntab svg{width:17px;height:17px}
+  .emp{padding:8px 20px}
+  .emp-ico{font-size:24px;margin-bottom:4px}
+  .emp-t{font-size:13px;margin-bottom:2px}
+  .emp-s{font-size:11px}
+  .rc{padding:10px}
+  /* dashboard cards: 6 stats in compact rows */
+  .g6c{gap:5px;margin-bottom:8px}
+}
 </style>
 </head>
 <body>
@@ -658,7 +695,7 @@ function Menu3({branch,reservations,onArrived,onEdit,onDelete,isAdmin,loading}){
       h('div',null,h('div',{className:'st'},'รายการติดตามลูกค้า'),h('div',{className:'ss'},(isAdmin?'ทุกสาขา':'สาขา '+branch)+' · ต้องติดตาม '+cnts.total+' ราย')),
       cnts.total>0&&h('span',{className:'badge bgr'},'⚠ '+cnts.total+' ราย')
     ),
-    h('div',{className:'mbox',style:{background:cnts.overdue>0?'linear-gradient(135deg,rgba(240,64,96,.1),rgba(240,64,96,.04))':'linear-gradient(135deg,rgba(59,125,255,.1),rgba(99,102,241,.05))',borderColor:cnts.overdue>0?'rgba(240,64,96,.25)':'rgba(59,125,255,.22)'}},
+    h('div',{className:'mbox mbox-hide-land',style:{background:cnts.overdue>0?'linear-gradient(135deg,rgba(240,64,96,.1),rgba(240,64,96,.04))':'linear-gradient(135deg,rgba(59,125,255,.1),rgba(99,102,241,.05))',borderColor:cnts.overdue>0?'rgba(240,64,96,.25)':'rgba(59,125,255,.22)'}},
       h('div',{className:'sc-l mb3'},'📞 ลูกค้าที่ต้องติดตาม'),
       h('div',{className:'mnum '+(cnts.overdue>0?'rd':'bl')},cnts.total),
       h('div',{className:'tsm mu mt2'},'นัดวันนี้ '+cnts.today+' ราย · เกินกำหนด '+cnts.overdue+' ราย')
@@ -827,7 +864,7 @@ function App(){
 
     /* SIDEBAR */
     h('div',{className:'sidebar'},
-      h('div',{className:'sb-logo'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.2'))),
+      h('div',{className:'sb-logo'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.3'))),
       h('div',{className:'sb-branch'},
         h('div',{className:'sb-lbl'},'สาขาที่ทำงาน'),
         h('div',{className:'sb-pill',onClick:()=>setShowBM(true)},
@@ -863,7 +900,7 @@ function App(){
 
       /* MOBILE HEADER */
       h('div',{className:'m-hdr'},
-        h('div',{className:'m-hdr-l'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.2'))),
+        h('div',{className:'m-hdr-l'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.3'))),
         h('div',{className:'m-hdr-r'},
           h('div',{className:'sync-chip'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'สด':'อัตโนมัติ'),
           h('div',{className:'sb-pill',style:{padding:'4px 10px'},onClick:()=>setShowBM(true)},
