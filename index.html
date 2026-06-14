@@ -287,12 +287,20 @@ const {createElement:h,useState,useEffect,useMemo,useCallback,useRef} = React;
 /* ── SUPABASE ── */
 const SB_URL = 'https://yigveyqcfzkxjzsrlger.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpZ3ZleXFjZnpreGp6c3JsZ2VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMjYzMjUsImV4cCI6MjA5NDYwMjMyNX0.5fkhW2ITHwuF2KCLcbY9Eo2E6-eTnuk8B-vTVSMRXbQ';
-const sb = supabase.createClient(SB_URL, SB_KEY);
+let sb=null;
+try{
+  if(typeof supabase!=='undefined' && supabase.createClient){
+    sb = supabase.createClient(SB_URL, SB_KEY, {
+      realtime:{ params:{ eventsPerSecond:2 } },
+      auth:{ persistSession:false }
+    });
+  }
+}catch(e){ console.warn('Supabase init failed:',e.message); }
 
 /* ── CONSTANTS ── */
 const BRANCHES = ['003','009','010','012','014','048','050','096','107','143'];
-const BRANDS   = ['Bridgestone','Michelin','Continental','Goodyear','Dunlop','Pirelli','Yokohama','Hankook','Toyo','Maxxis'];
-const SIZES    = ['165/65R13','175/65R14','185/65R14','195/65R15','205/55R16','215/55R17','225/45R18','235/50R18','245/40R19','255/35R20'];
+const BRANDS   = ['Bridgestone','Firestone','Dayton','Michelin','Continental','Goodyear','Dunlop','Pirelli','Yokohama','Hankook','Toyo','Maxxis'];
+const SIZES    = ['195/65R15','205/55R16','215/55R17','225/45R18'];
 
 /* ── HELPERS ── */
 function todayStr(){const d=new Date();return[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
@@ -394,7 +402,7 @@ function ResForm({branch,onSave,onClose,editing,saving}){
         h('div',{className:'fg'},h('label',{className:'fl'},'แบรนด์'),h('select',{className:'fsl',value:f.brand,onChange:e=>set('brand',e.target.value)},BRANDS.map(b=>h('option',{key:b,value:b},b)))),
         h('div',{className:'fg'},h('label',{className:'fl'},'รุ่น (Model)'),h('input',{className:'fi',placeholder:'เช่น Ecopia EP150',value:f.model,onChange:e=>set('model',e.target.value)})),
         h('div',{className:'fr2'},
-          h('div',{className:'fg'},h('label',{className:'fl'},'ขนาดยาง'),h('select',{className:'fsl',value:f.size,onChange:e=>set('size',e.target.value)},SIZES.map(s=>h('option',{key:s,value:s},s)))),
+          h('div',{className:'fg'},h('label',{className:'fl'},'ขนาดยาง'),h('input',{className:'fi',placeholder:'เช่น 195/65R15, 225/45R18',value:f.size,onChange:e=>set('size',e.target.value)})),
           h('div',{className:'fg'},h('label',{className:'fl'},'จำนวน (เส้น)'),h('select',{className:'fsl',value:f.qty,onChange:e=>set('qty',parseInt(e.target.value))},[1,2,3,4,5,6,8].map(n=>h('option',{key:n,value:n},n+' เส้น'))))
         ),
         h('div',{className:'dv'}),
@@ -502,10 +510,11 @@ function BPCard({branch,data,reservations,onUpdate}){
   const [act,setAct]=useState(String(data.actual));
   const [sv,setSv]=useState(false);
   const reserved=useMemo(()=>reservations.filter(r=>r.branch===branch&&r.status!=='arrived').reduce((s,r)=>s+r.qty,0),[reservations,branch]);
-  const remaining=Math.max(0,data.target-data.actual);
+  const remaining=Math.max(0,data.target-(data.actual+reserved));
   const combined=data.actual+reserved;
   const rate=data.target>0?(combined/data.target*100):0;
-  const daily=remaining>0?(remaining/28).toFixed(1):'—';
+  const dailyRaw=remaining>0?Math.ceil(remaining/28):0;
+  const daily=dailyRaw>0?(Math.ceil(dailyRaw/4)*4):'—';
   const col=rCol(rate);const pfcl=rPf(rate);const bcl=rBadge(rate);
   async function save(){setSv(true);await onUpdate(branch,{target:Math.max(0,parseInt(tgt)||0),actual:Math.max(0,parseInt(act)||0)});setSv(false);setEditing(false);}
   return h('div',{className:'card'},
@@ -595,11 +604,18 @@ function Menu3({branch,reservations,onArrived,onEdit,onDelete,isAdmin,loading}){
   const [search,setSearch]=useState('');
   const [filt,setFilt]=useState('all');
   const isToday=selDate===todayStr();
-  const base=useMemo(()=>{let l=reservations.filter(r=>r.service_date===selDate);if(!isAdmin)l=l.filter(r=>r.branch===branch);return l;},[reservations,selDate,branch,isAdmin]);
+  const base=useMemo(()=>{
+    let l=reservations.filter(r=>r.service_date===selDate);
+    // Staff: only their branch; Admin: all branches
+    if(!isAdmin)l=l.filter(r=>r.branch===branch);
+    return l;
+  },[reservations,selDate,branch,isAdmin]);
   const cnts=useMemo(()=>({total:base.length,arrived:base.filter(r=>r.status==='arrived').length,overdue:base.filter(r=>isOv(r)).length}),[base]);
   const list=useMemo(()=>{
     let l=base;
-    if(filt==='arrived')l=l.filter(r=>r.status==='arrived');
+    // Default "ทั้งหมด" tab: show only customers who haven't arrived yet and date not past
+    if(filt==='all')l=l.filter(r=>r.status==='upcoming'&&!isOv(r));
+    else if(filt==='arrived')l=l.filter(r=>r.status==='arrived');
     else if(filt==='overdue')l=l.filter(r=>isOv(r));
     else if(filt==='upcoming')l=l.filter(r=>r.status==='upcoming'&&!isOv(r));
     if(search.trim())l=l.filter(r=>r.customer_name.includes(search)||r.phone.includes(search));
@@ -632,7 +648,8 @@ function Menu3({branch,reservations,onArrived,onEdit,onDelete,isAdmin,loading}){
 
 /* ── ROOT APP ── */
 function App(){
-  const [branch,setBranch]=useState('003');
+  const [branch,setBranch]=useState(()=>{try{return localStorage.getItem('tt_branch')||'003';}catch{return'003';}});
+  function selectBranch(b){setBranch(b);try{localStorage.setItem('tt_branch',b);}catch{}}
   const [tab,setTab]=useState(0);
   const [showBM,setShowBM]=useState(false);
   const [role,setRole]=useState('staff');
@@ -655,63 +672,101 @@ function App(){
   }
 
   async function loadRes(){
+    if(!sb){ setLoadR(false); return; }
     setLoadR(true);
-    const {data,error}=await sb.from('tt_reservations').select('*').order('service_date');
-    if(error)toast('โหลดข้อมูลไม่สำเร็จ: '+error.message,'error');
-    else setReservations(data||[]);
+    try{
+      const {data,error}=await sb.from('tt_reservations').select('*').order('service_date');
+      if(error)toast('โหลดข้อมูลไม่สำเร็จ: '+error.message,'error');
+      else setReservations(data||[]);
+    }catch(e){ toast('เชื่อมต่อฐานข้อมูลไม่ได้','error'); }
     setLoadR(false);
   }
 
   async function loadBD(){
+    if(!sb){ setLoadB(false); return; }
     setLoadB(true);
-    const {data,error}=await sb.from('tt_branch_data').select('*');
-    if(error)toast('โหลดข้อมูลสาขาไม่สำเร็จ','error');
-    else{const m={};(data||[]).forEach(r=>{m[r.branch]={target:r.target,actual:r.actual};});setBranchData(m);}
+    try{
+      const {data,error}=await sb.from('tt_branch_data').select('*');
+      if(error)toast('โหลดข้อมูลสาขาไม่สำเร็จ','error');
+      else{const m={};(data||[]).forEach(r=>{m[r.branch]={target:r.target,actual:r.actual};});setBranchData(m);}
+    }catch(e){ toast('เชื่อมต่อฐานข้อมูลไม่ได้','error'); }
     setLoadB(false);
   }
 
   useEffect(()=>{
     loadRes(); loadBD();
-    const chR=sb.channel('tt_res_ch')
-      .on('postgres_changes',{event:'*',schema:'public',table:'tt_reservations'},p=>{
-        if(p.eventType==='INSERT')setReservations(prev=>{if(prev.find(r=>r.id===p.new.id))return prev;return [...prev,p.new];});
-        else if(p.eventType==='UPDATE')setReservations(prev=>prev.map(r=>r.id===p.new.id?p.new:r));
-        else if(p.eventType==='DELETE')setReservations(prev=>prev.filter(r=>r.id!==p.old.id));
-      }).subscribe(s=>{if(s==='SUBSCRIBED')setSynced(true);});
-    const chB=sb.channel('tt_bd_ch')
-      .on('postgres_changes',{event:'*',schema:'public',table:'tt_branch_data'},p=>{
-        if(p.new){const r=p.new;setBranchData(prev=>({...prev,[r.branch]:{target:r.target,actual:r.actual}}));}
-      }).subscribe();
-    return()=>{sb.removeChannel(chR);sb.removeChannel(chB);};
+    if(!sb) return;
+    let chR=null, chB=null, pollTimer=null;
+    // Try Realtime (WebSocket). If blocked (insecure context), fall back to polling.
+    try{
+      chR=sb.channel('tt_res_ch')
+        .on('postgres_changes',{event:'*',schema:'public',table:'tt_reservations'},p=>{
+          if(p.eventType==='INSERT')setReservations(prev=>{if(prev.find(r=>r.id===p.new.id))return prev;return [...prev,p.new];});
+          else if(p.eventType==='UPDATE')setReservations(prev=>prev.map(r=>r.id===p.new.id?p.new:r));
+          else if(p.eventType==='DELETE')setReservations(prev=>prev.filter(r=>r.id!==p.old.id));
+        }).subscribe(s=>{if(s==='SUBSCRIBED')setSynced(true);});
+      chB=sb.channel('tt_bd_ch')
+        .on('postgres_changes',{event:'*',schema:'public',table:'tt_branch_data'},p=>{
+          if(p.new){const r=p.new;setBranchData(prev=>({...prev,[r.branch]:{target:r.target,actual:r.actual}}));}
+        }).subscribe();
+    }catch(e){
+      // WebSocket unavailable — use polling every 8s instead
+      console.warn('Realtime unavailable, using polling:', e.message);
+      setSynced(false);
+    }
+    // Polling fallback (always on as a safety net; lightweight refetch)
+    pollTimer=setInterval(()=>{ loadRes(); loadBD(); }, 8000);
+    return()=>{
+      try{ if(chR)sb.removeChannel(chR); if(chB)sb.removeChannel(chB); }catch(e){}
+      if(pollTimer)clearInterval(pollTimer);
+    };
   },[]);
 
   async function handleSave(data){
+    if(!sb){ toast('ยังไม่ได้เชื่อมต่อฐานข้อมูล','error'); return; }
     setSaving(true);
     const isEdit=reservations.some(r=>r.id===data.id);
     const payload={id:data.id,branch:data.branch,customer_name:data.customer_name,phone:data.phone,brand:data.brand,model:data.model,size:data.size,qty:data.qty,reservation_date:data.reservation_date,service_date:data.service_date,status:data.status||'upcoming'};
-    if(isEdit){
-      const {error}=await sb.from('tt_reservations').update(payload).eq('id',data.id);
-      if(error)toast('อัปเดตไม่สำเร็จ: '+error.message,'error');else toast('อัปเดตการจองแล้ว');
-    }else{
-      const {error}=await sb.from('tt_reservations').insert([payload]);
-      if(error)toast('บันทึกไม่สำเร็จ: '+error.message,'error');else toast('บันทึกการจองใหม่แล้ว');
-    }
+    // Optimistic UI update (works even when realtime is off)
+    if(isEdit)setReservations(prev=>prev.map(r=>r.id===data.id?{...r,...payload}:r));
+    else setReservations(prev=>[...prev,payload]);
+    try{
+      if(isEdit){
+        const {error}=await sb.from('tt_reservations').update(payload).eq('id',data.id);
+        if(error)toast('อัปเดตไม่สำเร็จ: '+error.message,'error');else toast('อัปเดตการจองแล้ว');
+      }else{
+        const {error}=await sb.from('tt_reservations').insert([payload]);
+        if(error)toast('บันทึกไม่สำเร็จ: '+error.message,'error');else toast('บันทึกการจองใหม่แล้ว');
+      }
+    }catch(e){ toast('บันทึกไม่สำเร็จ','error'); }
     setSaving(false);setEditingRes(null);
   }
 
   async function handleArrived(id){
-    const {error}=await sb.from('tt_reservations').update({status:'arrived'}).eq('id',id);
-    if(error)toast('อัปเดตสถานะไม่สำเร็จ','error');else toast('ยืนยันลูกค้าเข้ารับบริการแล้ว');
+    if(!sb){ toast('ยังไม่ได้เชื่อมต่อฐานข้อมูล','error'); return; }
+    setReservations(prev=>prev.map(r=>r.id===id?{...r,status:'arrived'}:r));
+    try{
+      const {error}=await sb.from('tt_reservations').update({status:'arrived'}).eq('id',id);
+      if(error)toast('อัปเดตสถานะไม่สำเร็จ','error');else toast('ยืนยันลูกค้าเข้ารับบริการแล้ว');
+    }catch(e){ toast('อัปเดตสถานะไม่สำเร็จ','error'); }
   }
 
   async function handleDelete(id){
-    const {error}=await sb.from('tt_reservations').delete().eq('id',id);
-    if(error)toast('ลบไม่สำเร็จ','error');else toast('ลบรายการแล้ว','error');
+    if(!sb){ toast('ยังไม่ได้เชื่อมต่อฐานข้อมูล','error'); return; }
+    setReservations(prev=>prev.filter(r=>r.id!==id));
+    try{
+      const {error}=await sb.from('tt_reservations').delete().eq('id',id);
+      if(error)toast('ลบไม่สำเร็จ','error');else toast('ลบรายการแล้ว','error');
+    }catch(e){ toast('ลบไม่สำเร็จ','error'); }
   }
 
   async function handleUpdateBD(b,data){
-    const {error}=await sb.from('tt_branch_data').upsert({branch:b,target:data.target,actual:data.actual});
-    if(error)toast('อัปเดตข้อมูลสาขาไม่สำเร็จ','error');else toast('อัปเดตสาขา '+b+' แล้ว');
+    if(!sb){ toast('ยังไม่ได้เชื่อมต่อฐานข้อมูล','error'); return; }
+    setBranchData(prev=>({...prev,[b]:{target:data.target,actual:data.actual}}));
+    try{
+      const {error}=await sb.from('tt_branch_data').upsert({branch:b,target:data.target,actual:data.actual});
+      if(error)toast('อัปเดตข้อมูลสาขาไม่สำเร็จ','error');else toast('อัปเดตสาขา '+b+' แล้ว');
+    }catch(e){ toast('อัปเดตข้อมูลสาขาไม่สำเร็จ','error'); }
   }
 
   function handleEditFromSchedule(r){setEditingRes(r);setTab(0);}
@@ -739,7 +794,7 @@ function App(){
         h('div',{className:'sb-lbl'},'สาขาที่ทำงาน'),
         h('div',{className:'sb-pill',onClick:()=>setShowBM(true)},
           h('span',{className:'sb-code'},'B'+branch),
-          h('div',{className:'sb-live'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'ออนไลน์':'กำลังเชื่อม')
+          h('div',{className:'sb-live'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'ออนไลน์':'อัตโนมัติ')
         )
       ),
       h('div',{className:'sb-nav'},
@@ -763,7 +818,7 @@ function App(){
       h('div',{className:'topbar'},
         h('div',{className:'tb-left'},h('div',{className:'tb-title'},PAGE[tab].t),h('div',{className:'tb-sub'},PAGE[tab].s)),
         h('div',{className:'tb-right'},
-          h('div',{className:'sync-chip'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'ซิงก์ Realtime':'กำลังเชื่อมต่อ'),
+          h('div',{className:'sync-chip'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'ซิงก์ Realtime':'อัปเดตอัตโนมัติ'),
           h('button',{className:'btn bo bsm',onClick:()=>{loadRes();loadBD();}},h(SRef),'รีเฟรช')
         )
       ),
@@ -772,7 +827,7 @@ function App(){
       h('div',{className:'m-hdr'},
         h('div',{className:'m-hdr-l'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track')),
         h('div',{className:'m-hdr-r'},
-          h('div',{className:'sync-chip'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'สด':'...'),
+          h('div',{className:'sync-chip'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'สด':'อัตโนมัติ'),
           h('div',{className:'sb-pill',style:{padding:'4px 10px'},onClick:()=>setShowBM(true)},
             h('div',{className:'ldot'}),h('span',{style:{fontFamily:'var(--mono)',fontSize:13,fontWeight:600,color:'var(--ac)'}},'B'+branch)
           ),
@@ -798,12 +853,16 @@ function App(){
       )
     ),
 
-    showBM&&h(BranchModal,{cur:branch,onSelect:setBranch,onClose:()=>setShowBM(false)}),
+    showBM&&h(BranchModal,{cur:branch,onSelect:selectBranch,onClose:()=>setShowBM(false)}),
     h(Toasts,{list:toasts})
   );
 }
 
-ReactDOM.createRoot(document.getElementById('app')).render(h(App));
+try{
+  ReactDOM.createRoot(document.getElementById('app')).render(h(App));
+}catch(e){
+  document.getElementById('app').innerHTML='<div style="padding:40px;text-align:center;font-family:sans-serif;color:#edf0f8"><div style="font-size:40px;margin-bottom:16px">⚠️</div><div style="font-size:18px;font-weight:700;margin-bottom:8px">เกิดข้อผิดพลาด</div><div style="font-size:14px;color:#8e97b4">'+(e.message||'ไม่สามารถโหลดแอปได้')+'</div></div>';
+}
 })();
 </script>
 </body>
