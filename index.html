@@ -523,12 +523,10 @@ function ResCard({res,onArrived,onEdit,onDelete,showBranch}){
 }
 
 /* ── MENU 1 — RESERVATIONS ── */
-function Menu1({branch,reservations,loading,onSave,onArrived,onDelete,editingRes,setEditingRes,saving}){
-  const [showForm,setShowForm]=useState(false);
+function Menu1({branch,reservations,loading,onSave,onArrived,onDelete,editingRes,setEditingRes,saving,showForm,setShowForm}){
   const [delId,setDelId]=useState(null);
   const [search,setSearch]=useState('');
   const [filt,setFilt]=useState('all');
-  useEffect(()=>{if(editingRes)setShowForm(true);},[editingRes]);
   const mine=useMemo(()=>reservations.filter(r=>r.branch===branch),[reservations,branch]);
   const cnts=useMemo(()=>({all:mine.length,upcoming:mine.filter(r=>r.status==='upcoming'&&!isOv(r)).length,arrived:mine.filter(r=>r.status==='arrived').length,overdue:mine.filter(r=>isOv(r)).length}),[mine]);
   const list=useMemo(()=>{
@@ -560,7 +558,7 @@ function Menu1({branch,reservations,loading,onSave,onArrived,onDelete,editingRes
     loading?h('div',{className:'emp'},h('div',{className:'spin'}),h('div',{className:'tsm mu mt2'},'กำลังโหลด...')):
     list.length===0?h('div',{className:'emp'},h('div',{className:'emp-ico'},'📋'),h('div',{className:'emp-t'},'ไม่พบรายการ'),h('div',{className:'emp-s'},'กด "จองใหม่" เพื่อเพิ่มรายการ')):
     h('div',{className:'res-grid'},list.map(r=>h(ResCard,{key:r.id,res:r,onArrived,onEdit:openEdit,onDelete:id=>setDelId(id),showBranch:false}))),
-    showForm&&h(ResForm,{branch,onSave:handleSave,onClose:handleClose,editing:editingRes,saving}),
+    /* ResForm rendered at App level to survive tab switches */
     delId&&h(Confirm,{title:'ลบรายการจอง',text:'ยืนยันการลบ?\nข้อมูลจะหายไปและไม่สามารถกู้คืนได้',ico:'🗑️',okLabel:'ลบออก',okCls:'bdng',onOk:()=>{onDelete(delId);setDelId(null);},onCancel:()=>setDelId(null)})
   );
 }
@@ -727,6 +725,7 @@ function App(){
   const [branchData,setBranchData]=useState({});
   const [toasts,setToasts]=useState([]);
   const [editingRes,setEditingRes]=useState(null);
+  const [showForm,setShowForm]=useState(false);
   const [loadR,setLoadR]=useState(true);
   const [loadB,setLoadB]=useState(true);
   const [saving,setSaving]=useState(false);
@@ -743,6 +742,8 @@ function App(){
 
   // Track whether this is the initial load (show spinner) or a background refresh (silent)
   const isFirstLoad = React.useRef(true);
+  // Open form whenever editingRes is set (from schedule edit or reservation edit)
+  useEffect(()=>{ if(editingRes) setShowForm(true); },[editingRes]);
 
   async function loadRes(silent=false){
     if(!sb){ setLoadR(false); return; }
@@ -904,7 +905,7 @@ function App(){
 
     /* SIDEBAR */
     h('div',{className:'sidebar'},
-      h('div',{className:'sb-logo'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.4'))),
+      h('div',{className:'sb-logo'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.5'))),
       h('div',{className:'sb-branch'},
         h('div',{className:'sb-lbl'},'สาขาที่ทำงาน'),
         h('div',{className:'sb-pill',onClick:()=>setShowBM(true)},
@@ -940,7 +941,7 @@ function App(){
 
       /* MOBILE HEADER */
       h('div',{className:'m-hdr'},
-        h('div',{className:'m-hdr-l'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.4'))),
+        h('div',{className:'m-hdr-l'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.5'))),
         h('div',{className:'m-hdr-r'},
           h('div',{className:'sync-chip'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'สด':'อัตโนมัติ'),
           h('div',{className:'sb-pill',style:{padding:'4px 10px'},onClick:()=>setShowBM(true)},
@@ -955,7 +956,7 @@ function App(){
 
       /* PAGE CONTENT */
       h('div',{className:'page'},
-        tab===0&&h(Menu1,{branch,reservations,loading:loadR,onSave:handleSave,onArrived:handleArrived,onDelete:handleDelete,editingRes,setEditingRes,saving}),
+        tab===0&&h(Menu1,{branch,reservations,loading:loadR,onSave:handleSave,onArrived:handleArrived,onDelete:handleDelete,editingRes,setEditingRes,saving,showForm,setShowForm}),
         tab===1&&h(Menu2,{branch,branchData,reservations,isAdmin,onUpdate:handleUpdateBD,loading:loadB}),
         tab===2&&h(Menu3,{branch,reservations,onArrived:handleArrived,onEdit:handleEditFromSchedule,onDelete:handleDelete,isAdmin,loading:loadR})
       ),
@@ -968,6 +969,14 @@ function App(){
       )
     ),
 
+    /* ── ResForm at App level: survives tab switches & background re-renders ── */
+    showForm&&h(ResForm,{
+      branch: editingRes?editingRes.branch:branch,
+      onSave: d=>{handleSave(d);setShowForm(false);setEditingRes(null);},
+      onClose: ()=>{setShowForm(false);setEditingRes(null);},
+      editing: editingRes,
+      saving
+    }),
     showBM&&h(BranchModal,{cur:branch,onSelect:selectBranch,onClose:()=>setShowBM(false)}),
     h(Toasts,{list:toasts})
   );
