@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>TireTrack – ระบบจัดการจองยาง</title>
+<title>TireTrack v2.8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -12,7 +12,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 :root{
-  --bg:#080b12;--surf:#0f1320;--s2:#151b2e;--s3:#1a2138;--s4:#1f2844;
+  --bg:#080b12;--surf:#0f1320;--s2:#151b2e;--s3:#1a2138;
   --bd:#222840;--b2:#2a3352;--b3:#334070;
   --tx:#edf0f8;--t2:#8e97b4;--t3:#505878;
   --ac:#3b7dff;--a2:#2563eb;--ag:rgba(59,125,255,.14);
@@ -26,13 +26,11 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--font);font-size:15px;-webkit-font-smoothing:antialiased;overflow:hidden}
+#app{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
 
-/* ─ APP SHELL ─ */
-#app{display:flex;height:100vh;height:100dvh;width:100vw;overflow:hidden}
-
-/* ─ SIDEBAR ─ */
+/* SIDEBAR */
 .sidebar{width:var(--sidebar);flex-shrink:0;background:var(--surf);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;z-index:40}
 .sb-logo{height:calc(var(--hdr) + env(safe-area-inset-top,0));display:flex;align-items:center;gap:11px;padding:env(safe-area-inset-top,0) 20px 0;border-bottom:1px solid var(--bd);flex-shrink:0}
 .lmark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b7dff,#6366f1);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:-.5px}
@@ -61,44 +59,36 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .role-name{font-size:12px;font-weight:700;color:var(--tx)}
 .role-hint{font-size:10px;color:var(--t3);margin-top:1px}
 
-/* ─ MAIN AREA ─ */
+/* MAIN */
 .main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;height:100vh;height:100dvh}
 
-/* ─ TOPBAR (desktop) ─ */
+/* TOPBAR */
 .topbar{height:calc(var(--hdr) + env(safe-area-inset-top,0));display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0) 24px 0;background:var(--surf);border-bottom:1px solid var(--bd);flex-shrink:0;gap:16px}
 .tb-left{}
 .tb-title{font-size:17px;font-weight:700;letter-spacing:-.3px}
 .tb-sub{font-size:12px;color:var(--t2);margin-top:1px}
 .tb-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
 
-/* ─ MOBILE HEADER ─ */
+/* MOBILE HEADER */
 .m-hdr{display:none;height:calc(var(--hdr) + env(safe-area-inset-top,0));align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0) 14px 0;background:var(--surf);border-bottom:1px solid var(--bd);flex-shrink:0;position:sticky;top:0;z-index:30}
 .m-hdr-l{display:flex;align-items:center;gap:9px}
 .m-hdr-r{display:flex;align-items:center;gap:7px}
 
-/* ─ CONTENT ─ */
+/* PAGE */
 .page{flex:1;overflow-y:auto;overflow-x:hidden;padding:22px 24px}
 
-/* ─ BOTTOM NAV (mobile) ─ */
+/* BOTTOM NAV */
 .bnav{display:none;background:var(--surf);border-top:1px solid var(--bd);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0)}
 .ntab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:9px 0 8px;cursor:pointer;border:none;background:none;color:var(--t3);font-family:var(--font);font-size:10px;font-weight:500;transition:color .15s;position:relative}
 .ntab.on{color:var(--ac)}
 .ntab.on::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:2px;background:var(--ac);border-radius:0 0 2px 2px}
 .nb{position:absolute;top:4px;right:calc(50% - 20px);background:var(--rd);color:#fff;font-size:9px;font-weight:700;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
 
-/* ─ RESPONSIVE ─
-   Strategy:
-   - Wide screens (>=900px) incl. landscape tablets/desktop -> SIDEBAR layout
-   - Narrow screens (<900px) incl. portrait phones -> BOTTOM NAV layout
-   This keeps the bottom nav from overlapping in landscape. */
-
-/* Default (desktop / wide): sidebar shown, bottom nav hidden */
+/* RESPONSIVE */
 .sidebar{display:flex}
 .m-hdr{display:none}
 .bnav{display:none}
 .topbar{display:flex}
-
-/* Narrow / portrait phones: hide sidebar, show mobile chrome */
 @media(max-width:899px){
   .sidebar{display:none}
   .m-hdr{display:flex}
@@ -107,8 +97,6 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
   .page{padding:12px 14px 14px}
 }
 @media(max-width:480px){.page{padding:10px 12px 12px}}
-
-/* Compact sidebar when wide but short (landscape phones/tablets) */
 @media(min-width:900px) and (max-height:560px){
   :root{--sidebar:200px;--hdr:48px}
   .sb-logo{padding:0 14px}
@@ -119,47 +107,42 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
   .role-hint{display:none}
   .page{padding:14px 16px}
 }
-
 @media(min-width:1400px){:root{--sidebar:264px}}
 
-/* ─ GRIDS ─ */
+/* GRIDS */
 .g2c{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .g3c{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
 .g4c{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
 .g6c{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
 .res-grid{display:grid;grid-template-columns:1fr;gap:10px}
 @media(min-width:1100px){
-  .g2c{grid-template-columns:repeat(4,1fr)}
   .g3c{grid-template-columns:repeat(6,1fr)}
   .g6c{grid-template-columns:repeat(6,1fr)}
   .res-grid{grid-template-columns:1fr 1fr}
   .dash-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 }
 @media(min-width:700px) and (max-width:1099px){
-  .g2c{grid-template-columns:repeat(4,1fr)}
-  .g3c{grid-template-columns:repeat(3,1fr)}
   .res-grid{grid-template-columns:1fr 1fr}
   .g6c{grid-template-columns:repeat(3,1fr)}
 }
 @media(max-width:380px){.g3c{grid-template-columns:1fr 1fr}.g2c{grid-template-columns:1fr 1fr}}
 
-/* ─ CARDS ─ */
+/* CARDS */
 .card{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:12px}
 .sc{background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);padding:10px 12px;transition:border-color .15s}
 .sc:hover{border-color:var(--b3)}
 .sc-l{font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
 .sc-v{font-size:20px;font-weight:700;font-family:var(--mono);letter-spacing:-1px;line-height:1.05}
 .sc-s{font-size:11px;color:var(--t2);margin-top:3px}
-@media(min-width:1100px){.sc-v{font-size:26px}}
-@media(max-width:480px){.card{padding:14px}}
+@media(min-width:1100px){.sc-v{font-size:24px}}
 
-/* ─ SECTION HEADER ─ */
+/* SECTION HEADER */
 .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap}
 .st{font-size:19px;font-weight:800;letter-spacing:-.4px}
 .ss{font-size:13px;color:var(--t2);margin-top:2px}
 @media(max-width:480px){.st{font-size:17px}}
 
-/* ─ BUTTONS ─ */
+/* BUTTONS */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 18px;height:42px;border-radius:var(--rs);font-family:var(--font);font-size:14px;font-weight:600;border:none;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
 .bp{background:var(--ac);color:#fff}.bp:hover{background:var(--a2)}
 .bo{background:transparent;color:var(--tx);border:1.5px solid var(--b2)}.bo:hover{border-color:var(--ac);color:var(--ac)}
@@ -169,7 +152,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .bxs{height:28px;padding:0 9px;font-size:12px;border-radius:7px}
 .bw{width:100%}
 
-/* ─ FORMS ─ */
+/* FORMS */
 .fg{margin-bottom:13px}
 .fl{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;display:block}
 .fi,.fsl{width:100%;background:var(--s2);border:1.5px solid var(--bd);border-radius:var(--rs);padding:11px 14px;color:var(--tx);font-family:var(--font);font-size:15px;outline:none;transition:border-color .15s,box-shadow .15s}
@@ -180,7 +163,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:380px){.fr2{grid-template-columns:1fr}}
 
-/* ─ BADGE ─ */
+/* BADGE */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;line-height:1.5}
 .bgg{background:var(--gb);color:var(--gn)}
 .bgy{background:var(--yb);color:var(--yw)}
@@ -188,7 +171,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .bgb{background:var(--ag);color:var(--ac)}
 .bgx{background:rgba(139,151,180,.1);color:var(--t2)}
 
-/* ─ PROGRESS ─ */
+/* PROGRESS */
 .pb{height:6px;background:var(--s3);border-radius:4px;overflow:hidden}
 .pb-lg{height:9px}
 .pf{height:100%;border-radius:4px;transition:width .6s ease}
@@ -196,7 +179,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .py{background:linear-gradient(90deg,#c77f0a,var(--yw))}
 .pr{background:linear-gradient(90deg,#bf2040,var(--rd))}
 
-/* ─ RESERVATION CARD ─ */
+/* RESERVATION CARD */
 .rc{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:13px;position:relative;overflow:hidden;transition:border-color .15s,box-shadow .15s}
 .rc:hover{border-color:var(--b3);box-shadow:0 4px 20px rgba(0,0,0,.3)}
 .rc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
@@ -211,7 +194,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .rc-dv{font-size:13px;font-weight:500;color:var(--tx)}
 .rc-ft{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 
-/* ─ MODAL / SHEET ─ */
+/* MODAL */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:flex-end;justify-content:center;animation:fa .2s}
 @keyframes fa{from{opacity:0}to{opacity:1}}
 .sheet{background:var(--surf);border-radius:20px 20px 0 0;border:1px solid var(--bd);border-bottom:none;width:100%;max-width:520px;max-height:94vh;overflow-y:auto;animation:fup .28s ease}
@@ -230,13 +213,13 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .xb{width:32px;height:32px;border-radius:50%;background:var(--s2);border:1px solid var(--bd);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);transition:all .15s}
 .xb:hover{background:var(--s3);color:var(--tx)}
 
-/* ─ BRANCH PICKER ─ */
+/* BRANCH PICKER */
 .bgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px}
 .bb{background:var(--s2);border:1.5px solid var(--bd);border-radius:10px;padding:13px 4px;text-align:center;cursor:pointer;transition:all .15s;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--t2)}
 .bb.on{background:var(--ag);border-color:var(--ac);color:var(--ac)}
 .bb:hover{border-color:var(--ac);color:var(--ac)}
 
-/* ─ SEARCH & FILTER ─ */
+/* SEARCH & FILTER */
 .sbar{display:flex;align-items:center;gap:10px;background:var(--s2);border:1.5px solid var(--bd);border-radius:var(--rs);padding:0 14px;margin-bottom:10px;height:40px;transition:border-color .15s}
 .sbar:focus-within{border-color:var(--ac)}
 .sbar input{flex:1;background:none;border:none;outline:none;font-family:var(--font);font-size:14px;color:var(--tx)}
@@ -246,50 +229,42 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .fc{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--bd);background:none;color:var(--t2);white-space:nowrap;font-family:var(--font);transition:all .15s}
 .fc.on{background:var(--ac);border-color:var(--ac);color:#fff}
 
-/* ─ DATE NAV ─ */
-.dnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:8px}
-.dnb{width:40px;height:40px;flex-shrink:0;border-radius:10px;background:var(--s2);border:1px solid var(--bd);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2);transition:all .15s}
-.dnb:hover{border-color:var(--ac);color:var(--ac)}
-.d-info{text-align:center;flex:1}
-.d-main{font-size:16px;font-weight:700}
-.d-sub{font-size:12px;color:var(--t2);margin-top:2px}
-
-/* ─ EMPTY / LOADING ─ */
+/* EMPTY & LOADING */
 .emp{text-align:center;padding:32px 20px}
-.emp-ico{font-size:44px;margin-bottom:14px;opacity:.35}
+.emp-ico{font-size:40px;margin-bottom:12px;opacity:.35}
 .emp-t{font-size:16px;font-weight:600;color:var(--t2);margin-bottom:5px}
 .emp-s{font-size:13px;color:var(--t3);line-height:1.7;white-space:pre-line}
 .spin{display:inline-block;width:32px;height:32px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 
-/* ─ CONFIRM ─ */
+/* CONFIRM */
 .cov{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;animation:fa .2s}
 .cdlg{background:var(--surf);border:1px solid var(--bd);border-radius:var(--rl);padding:28px;max-width:310px;width:100%;animation:fpop2 .2s ease;box-shadow:0 24px 64px rgba(0,0,0,.6)}
 @keyframes fpop2{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
 
-/* ─ TOAST ─ */
+/* TOAST */
 .tcon{position:fixed;top:66px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:420px;z-index:600;pointer-events:none}
 @media(min-width:1025px){.tcon{top:14px;right:18px;left:auto;transform:none;width:340px}}
 .toast{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:11px 15px;margin-bottom:8px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:tsl .25s ease;pointer-events:all}
 @keyframes tsl{from{transform:translateY(-8px);opacity:0}to{transform:translateY(0);opacity:1}}
 .tg{border-left:3px solid var(--gn)}.te{border-left:3px solid var(--rd)}.tw{border-left:3px solid var(--yw)}
 
-/* ─ METRIC BOX ─ */
+/* METRIC BOX */
 .mbox{background:linear-gradient(135deg,rgba(59,125,255,.1),rgba(99,102,241,.05));border:1px solid rgba(59,125,255,.22);border-radius:var(--r);padding:14px;margin-bottom:12px;text-align:center}
 .mnum{font-size:38px;font-weight:800;font-family:var(--mono);letter-spacing:-2px;line-height:1.05}
-.munit{font-size:20px;font-weight:400;color:var(--t2)}
+.munit{font-size:18px;font-weight:400;color:var(--t2)}
 
-/* ─ RANK ─ */
+/* RANK */
 .rr{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd)}
 .rr:last-child{border-bottom:none}
 
-/* ─ DIVIDER ─ */
+/* DIVIDER */
 .dv{height:1px;background:var(--bd);margin:14px 0}
 
-/* ─ SYNC CHIP ─ */
+/* SYNC CHIP */
 .sync-chip{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2);background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:4px 10px}
 
-/* ─ UTILS ─ */
+/* UTILS */
 .gn{color:var(--gn)}.yw{color:var(--yw)}.rd{color:var(--rd)}.bl{color:var(--ac)}.mu{color:var(--t2)}
 .mono{font-family:var(--mono)}.bld{font-weight:700}.sem{font-weight:600}
 .fx{display:flex}.fxa{display:flex;align-items:center}.fxb{display:flex;align-items:center;justify-content:space-between}
@@ -301,9 +276,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 .upr{text-transform:uppercase;letter-spacing:.5px}
 .trunc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* ══ LANDSCAPE OVERRIDES (must be last to win cascade) ══ */
-/* LANDSCAPE on narrow devices (phone/tablet landscape using bottom-nav layout):
-   wide but short -> compact aggressively so everything fits one screen */
+/* LANDSCAPE OVERRIDES - must be last */
 @media(max-width:899px) and (orientation:landscape){
   :root{--hdr:42px}
   .m-hdr{padding-left:12px;padding-right:12px}
@@ -313,11 +286,9 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
   .sh{margin-bottom:7px}
   .st{font-size:15px}
   .ss{font-size:11px}
-  /* hide the large metric banner in tight landscape - stat cards cover it */
   .mbox-hide-land{display:none}
   .mbox{padding:8px 14px;margin-bottom:8px}
   .mnum{font-size:24px}
-  .munit{font-size:13px}
   .g2c,.g3c{margin-bottom:6px;gap:6px}
   .sc{padding:5px 9px}
   .sc-v{font-size:15px}
@@ -334,7 +305,6 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
   .emp-t{font-size:13px;margin-bottom:2px}
   .emp-s{font-size:11px}
   .rc{padding:10px}
-  /* dashboard cards: 6 stats in compact rows */
   .g6c{gap:5px;margin-bottom:8px}
 }
 </style>
@@ -346,25 +316,24 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--fon
 'use strict';
 const {createElement:h,useState,useEffect,useMemo,useCallback,useRef} = React;
 
-/* ── SUPABASE ── */
-const SB_URL = 'https://yigveyqcfzkxjzsrlger.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpZ3ZleXFjZnpreGp6c3JsZ2VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMjYzMjUsImV4cCI6MjA5NDYwMjMyNX0.5fkhW2ITHwuF2KCLcbY9Eo2E6-eTnuk8B-vTVSMRXbQ';
-let sb=null;
+/* SUPABASE */
+const SB_URL='https://yigveyqcfzkxjzsrlger.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpZ3ZleXFjZnpreGp6c3JsZ2VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMjYzMjUsImV4cCI6MjA5NDYwMjMyNX0.5fkhW2ITHwuF2KCLcbY9Eo2E6-eTnuk8B-vTVSMRXbQ';
+const CP_URL='https://rslxffftnpmzyzssxqql.supabase.co';
+const CP_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzbHhmZmZ0bnBtenl6c3N4cXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMjUwNTQsImV4cCI6MjA5NDYwMTA1NH0.ke4Ft4cba7ujOrAQxos-JjdQwMzx1caF_R_3KxYnuEc';
+let sb=null,cp=null;
 try{
-  if(typeof supabase!=='undefined' && supabase.createClient){
-    sb = supabase.createClient(SB_URL, SB_KEY, {
-      realtime:{ params:{ eventsPerSecond:2 } },
-      auth:{ persistSession:false }
-    });
+  if(typeof supabase!=='undefined'&&supabase.createClient){
+    sb=supabase.createClient(SB_URL,SB_KEY,{realtime:{params:{eventsPerSecond:2}},auth:{persistSession:false}});
+    cp=supabase.createClient(CP_URL,CP_KEY,{auth:{persistSession:false}});
   }
-}catch(e){ console.warn('Supabase init failed:',e.message); }
+}catch(e){console.warn('Supabase init failed:',e.message);}
 
-/* ── CONSTANTS ── */
-const BRANCHES = ['003','009','010','012','014','048','050','096','107','143'];
-const BRANDS   = ['Bridgestone','Firestone','Dayton','Michelin','Continental','Goodyear','Dunlop','Pirelli','Yokohama','Hankook','Toyo','Maxxis','อื่นๆ (Other)'];
-const SIZES    = ['195/65R15','205/55R16','215/55R17','225/45R18'];
+/* CONSTANTS */
+const BRANCHES=['003','009','010','012','014','048','050','096','107','143'];
+const BRANDS=['Bridgestone','Firestone','Dayton','Michelin','Continental','Goodyear','Dunlop','Pirelli','Yokohama','Hankook','Toyo','Maxxis','อื่นๆ (Other)'];
 
-/* ── HELPERS ── */
+/* HELPERS */
 function todayStr(){const d=new Date();return[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 function addDays(s,n){const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
 function fmtDate(s){if(!s)return'—';return new Date(s+'T00:00:00').toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'numeric'});}
@@ -375,13 +344,13 @@ function rCol(v){return v>=100?'gn':v>=90?'yw':'rd';}
 function rBadge(v){return v>=100?'bgg':v>=90?'bgy':'bgr';}
 function rPf(v){return v>=100?'pg':v>=90?'py':'pr';}
 
-/* ── ICONS ── */
+/* ICONS */
 const SDoc=({s=20})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('path',{d:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'}),h('polyline',{points:'14 2 14 8 20 8'}),h('line',{x1:16,y1:13,x2:8,y2:13}),h('line',{x1:16,y1:17,x2:8,y2:17}));
 const SGrd=({s=20})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round'},h('rect',{x:3,y:3,width:7,height:7}),h('rect',{x:14,y:3,width:7,height:7}),h('rect',{x:14,y:14,width:7,height:7}),h('rect',{x:3,y:14,width:7,height:7}));
 const SCal=({s=20})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('rect',{x:3,y:4,width:18,height:18,rx:2}),h('line',{x1:16,y1:2,x2:16,y2:6}),h('line',{x1:8,y1:2,x2:8,y2:6}),h('line',{x1:3,y1:10,x2:21,y2:10}));
 const SPlus=({s=15})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2.5,strokeLinecap:'round'},h('line',{x1:12,y1:5,x2:12,y2:19}),h('line',{x1:5,y1:12,x2:19,y2:12}));
 const SChk=({s=13})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2.5,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'20 6 9 17 4 12'}));
-const SX=({s=13})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round'},h('line',{x1:18,y1:6,x2:6,y2:18}),h('line',{x1:6,y1:6,x2:18,y2:18}));
+const SX=({s=13})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2},h('line',{x1:18,y1:6,x2:6,y2:18}),h('line',{x1:6,y1:6,x2:18,y2:18}));
 const SSrc=({s=15})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round'},h('circle',{cx:11,cy:11,r:8}),h('line',{x1:21,y1:21,x2:16.65,y2:16.65}));
 const SL=({s=15})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'15 18 9 12 15 6'}));
 const SR=({s=15})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'9 18 15 12 9 6'}));
@@ -391,51 +360,18 @@ const SPh=({s=11})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',st
 const STrp=({s=14})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'8 21 12 21 16 21'}),h('line',{x1:12,y1:17,x2:12,y2:21}),h('path',{d:'M7 4h10l1 5a5 5 0 0 1-12 0z'}),h('path',{d:'M5 4H3a2 2 0 0 0-2 2v2a5 5 0 0 0 5 5'}),h('path',{d:'M19 4h2a2 2 0 0 1 2 2v2a5 5 0 0 1-5 5'}));
 const SRef=({s=13})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'23 4 23 10 17 10'}),h('path',{d:'M20.49 15a9 9 0 1 1-2.12-9.36L23 10'}));
 
-/* ── TOAST ── */
-function Toasts({list}){
-  return h('div',{className:'tcon'},
-    list.map(t=>h('div',{key:t.id,className:'toast '+(t.cls||'tg')},
-      h('span',{style:{fontSize:17}},t.ico||'✅'),
-      h('span',{style:{flex:1,fontSize:13,fontWeight:500}},t.msg)
-    ))
-  );
-}
+/* TOAST */
+function Toasts({list}){return h('div',{className:'tcon'},list.map(t=>h('div',{key:t.id,className:'toast '+(t.cls||'tg')},h('span',{style:{fontSize:17}},t.ico||'✅'),h('span',{style:{flex:1,fontSize:13,fontWeight:500}},t.msg))));}
 
-/* ── CONFIRM ── */
-function Confirm({title,text,ico,okLabel,okCls,onOk,onCancel}){
-  return h('div',{className:'cov',onClick:onCancel},
-    h('div',{className:'cdlg',onClick:e=>e.stopPropagation()},
-      h('div',{style:{fontSize:38,textAlign:'center',marginBottom:12}},ico||'⚠️'),
-      h('div',{style:{fontSize:17,fontWeight:700,textAlign:'center',marginBottom:8}},title),
-      h('div',{style:{fontSize:13,color:'var(--t2)',textAlign:'center',marginBottom:22,lineHeight:1.7}},text),
-      h('div',{className:'fx g2'},
-        h('button',{className:'btn bo',style:{flex:1},onClick:onCancel},'ยกเลิก'),
-        h('button',{className:'btn '+(okCls||'bdng'),style:{flex:1},onClick:onOk},okLabel||'ยืนยัน')
-      )
-    )
-  );
-}
+/* CONFIRM */
+function Confirm({title,text,ico,okLabel,okCls,onOk,onCancel}){return h('div',{className:'cov',onClick:onCancel},h('div',{className:'cdlg',onClick:e=>e.stopPropagation()},h('div',{style:{fontSize:38,textAlign:'center',marginBottom:12}},ico||'⚠️'),h('div',{style:{fontSize:17,fontWeight:700,textAlign:'center',marginBottom:8}},title),h('div',{style:{fontSize:13,color:'var(--t2)',textAlign:'center',marginBottom:22,lineHeight:1.7}},text),h('div',{className:'fx g2'},h('button',{className:'btn bo',style:{flex:1},onClick:onCancel},'ยกเลิก'),h('button',{className:'btn '+(okCls||'bdng'),style:{flex:1},onClick:onOk},okLabel||'ยืนยัน'))));}
 
-/* ── BRANCH MODAL ── */
-function BranchModal({cur,onSelect,onClose}){
-  return h('div',{className:'ov',onClick:onClose},
-    h('div',{className:'sheet',onClick:e=>e.stopPropagation()},
-      h('div',{className:'hdl'}),
-      h('div',{className:'m-hdr2'},
-        h('div',null,h('div',{className:'m-title'},'🏢 เลือกสาขา'),h('div',{className:'tsm mu mt2'},'เลือกสาขาที่ต้องการทำงาน')),
-        h('button',{className:'xb',onClick:onClose},h(SX))
-      ),
-      h('div',{className:'m-body'},
-        h('div',{className:'bgrid'},BRANCHES.map(b=>h('div',{key:b,className:'bb'+(b===cur?' on':''),onClick:()=>{onSelect(b);onClose();}},b)))
-      ),
-      h('div',{style:{height:20}})
-    )
-  );
-}
+/* BRANCH MODAL */
+function BranchModal({cur,onSelect,onClose}){return h('div',{className:'ov',onClick:onClose},h('div',{className:'sheet',onClick:e=>e.stopPropagation()},h('div',{className:'hdl'}),h('div',{className:'m-hdr2'},h('div',null,h('div',{className:'m-title'},'🏢 เลือกสาขา'),h('div',{className:'tsm mu mt2'},'เลือกสาขาที่ต้องการทำงาน')),h('button',{className:'xb',onClick:onClose},h(SX))),h('div',{className:'m-body'},h('div',{className:'bgrid'},BRANCHES.map(b=>h('div',{key:b,className:'bb'+(b===cur?' on':''),onClick:()=>{onSelect(b);onClose();}},b)))),h('div',{style:{height:20}})));}
 
-/* ── FORM ── */
+/* RESERVATION FORM */
 function ResForm({branch,onSave,onClose,editing,saving}){
-  const init=editing?{...editing}:{customer_name:'',phone:'',brand:BRANDS[0],model:'',size:SIZES[3],qty:4,reservation_date:todayStr(),service_date:'',status:'upcoming'};
+  const init=editing?{...editing}:{customer_name:'',phone:'',brand:BRANDS[0],model:'',size:'',qty:4,reservation_date:todayStr(),service_date:'',status:'upcoming'};
   const [f,setF]=useState(init);
   const [err,setErr]=useState('');
   const set=(k,v)=>setF(p=>({...p,[k]:v}));
@@ -450,12 +386,9 @@ function ResForm({branch,onSave,onClose,editing,saving}){
   return h('div',{className:'ov',onClick:onClose},
     h('div',{className:'sheet',onClick:e=>e.stopPropagation()},
       h('div',{className:'hdl'}),
-      h('div',{className:'m-hdr2'},
-        h('div',null,h('div',{className:'m-title'},editing?'✏️ แก้ไขการจอง':'➕ เพิ่มการจองใหม่'),h('div',{className:'tsm mu mt2'},'สาขา '+branch)),
-        h('button',{className:'xb',onClick:onClose},h(SX))
-      ),
+      h('div',{className:'m-hdr2'},h('div',null,h('div',{className:'m-title'},editing?'✏️ แก้ไขการจอง':'➕ เพิ่มการจองใหม่'),h('div',{className:'tsm mu mt2'},'สาขา '+branch)),h('button',{className:'xb',onClick:onClose},h(SX))),
       h('div',{className:'m-body'},
-        err&&h('div',{style:{background:'var(--rb)',border:'1px solid var(--rd)',borderRadius:8,padding:'10px 14px',marginBottom:14,fontSize:13,color:'var(--rd)'}},'\u26a0\ufe0f '+err),
+        err&&h('div',{style:{background:'var(--rb)',border:'1px solid var(--rd)',borderRadius:8,padding:'10px 14px',marginBottom:14,fontSize:13,color:'var(--rd)'}},'⚠️ '+err),
         h(SL2,{ico:'👤',txt:'ข้อมูลลูกค้า'}),
         h('div',{className:'fg'},h('label',{className:'fl'},'ชื่อ-นามสกุล *'),h('input',{className:'fi',placeholder:'ชื่อ-นามสกุล',value:f.customer_name,onChange:e=>set('customer_name',e.target.value)})),
         h('div',{className:'fg'},h('label',{className:'fl'},'เบอร์โทรศัพท์ *'),h('input',{className:'fi',placeholder:'0xx-xxx-xxxx',type:'tel',value:f.phone,onChange:e=>set('phone',e.target.value)})),
@@ -464,7 +397,7 @@ function ResForm({branch,onSave,onClose,editing,saving}){
         h('div',{className:'fg'},h('label',{className:'fl'},'แบรนด์'),h('select',{className:'fsl',value:f.brand,onChange:e=>set('brand',e.target.value)},BRANDS.map(b=>h('option',{key:b,value:b},b)))),
         h('div',{className:'fg'},h('label',{className:'fl'},'รุ่น (Model)'),h('input',{className:'fi',placeholder:'เช่น Ecopia EP150',value:f.model,onChange:e=>set('model',e.target.value)})),
         h('div',{className:'fr2'},
-          h('div',{className:'fg'},h('label',{className:'fl'},'ขนาดยาง'),h('input',{className:'fi',placeholder:'เช่น 195/65R15, 225/45R18',value:f.size,onChange:e=>set('size',e.target.value)})),
+          h('div',{className:'fg'},h('label',{className:'fl'},'ขนาดยาง'),h('input',{className:'fi',placeholder:'เช่น 195/65R15',value:f.size,onChange:e=>set('size',e.target.value)})),
           h('div',{className:'fg'},h('label',{className:'fl'},'จำนวน (เส้น)'),h('select',{className:'fsl',value:f.qty,onChange:e=>set('qty',parseInt(e.target.value))},[1,2,3,4,5,6,8].map(n=>h('option',{key:n,value:n},n+' เส้น'))))
         ),
         h('div',{className:'dv'}),
@@ -485,7 +418,7 @@ function ResForm({branch,onSave,onClose,editing,saving}){
   );
 }
 
-/* ── RESERVATION CARD ── */
+/* RESERVATION CARD */
 function ResCard({res,onArrived,onEdit,onDelete,showBranch}){
   const ov=isOv(res);
   const sc=res.status==='arrived'?'sarr':ov?'sov':'sup';
@@ -495,8 +428,7 @@ function ResCard({res,onArrived,onEdit,onDelete,showBranch}){
       h('div',{style:{flex:1,minWidth:0}},
         h('div',{className:'rc-name trunc'},res.customer_name),
         h('div',{className:'rc-phone'},h(SPh),h('span',{className:'mono'},res.phone),
-          showBranch&&h('span',{className:'badge bgb',style:{padding:'1px 7px',fontSize:10,marginLeft:6}},'B'+res.branch)
-        )
+          showBranch&&h('span',{className:'badge bgb',style:{padding:'1px 7px',fontSize:10,marginLeft:6}},'B'+res.branch))
       ),
       h('div',{style:{flexShrink:0,marginLeft:8}},
         res.status==='arrived'?h('span',{className:'badge bgg'},'✓ เสร็จสิ้น'):
@@ -506,7 +438,7 @@ function ResCard({res,onArrived,onEdit,onDelete,showBranch}){
     ),
     h('div',{className:'rc-det'},
       h('div',null,h('div',{className:'rc-dl'},'แบรนด์ / รุ่น'),h('div',{className:'rc-dv'},res.brand+(res.model?' · '+res.model:''))),
-      h('div',null,h('div',{className:'rc-dl'},'ขนาด × เส้น'),h('div',{className:'rc-dv mono'},res.size+' × '+res.qty)),
+      h('div',null,h('div',{className:'rc-dl'},'ขนาด x เส้น'),h('div',{className:'rc-dv mono'},res.size+' x '+res.qty)),
       h('div',null,h('div',{className:'rc-dl'},'วันที่จอง'),h('div',{className:'rc-dv'},fmtDate(res.reservation_date))),
       h('div',null,h('div',{className:'rc-dl'},'วันนัดบริการ'),h('div',{className:'rc-dv'+(ov?' rd':'')},fmtDate(res.service_date)))
     ),
@@ -522,7 +454,7 @@ function ResCard({res,onArrived,onEdit,onDelete,showBranch}){
   );
 }
 
-/* ── MENU 1 — RESERVATIONS ── */
+/* MENU 1 - RESERVATIONS */
 function Menu1({branch,reservations,loading,onSave,onArrived,onDelete,editingRes,setEditingRes,saving,showForm,setShowForm}){
   const [delId,setDelId]=useState(null);
   const [search,setSearch]=useState('');
@@ -558,17 +490,12 @@ function Menu1({branch,reservations,loading,onSave,onArrived,onDelete,editingRes
     loading?h('div',{className:'emp'},h('div',{className:'spin'}),h('div',{className:'tsm mu mt2'},'กำลังโหลด...')):
     list.length===0?h('div',{className:'emp'},h('div',{className:'emp-ico'},'📋'),h('div',{className:'emp-t'},'ไม่พบรายการ'),h('div',{className:'emp-s'},'กด "จองใหม่" เพื่อเพิ่มรายการ')):
     h('div',{className:'res-grid'},list.map(r=>h(ResCard,{key:r.id,res:r,onArrived,onEdit:openEdit,onDelete:id=>setDelId(id),showBranch:false}))),
-    /* ResForm rendered at App level to survive tab switches */
     delId&&h(Confirm,{title:'ลบรายการจอง',text:'ยืนยันการลบ?\nข้อมูลจะหายไปและไม่สามารถกู้คืนได้',ico:'🗑️',okLabel:'ลบออก',okCls:'bdng',onOk:()=>{onDelete(delId);setDelId(null);},onCancel:()=>setDelId(null)})
   );
 }
 
-/* ── BRANCH PERF CARD ── */
-function BPCard({branch,data,reservations,onUpdate}){
-  const [editing,setEditing]=useState(false);
-  const [tgt,setTgt]=useState(String(data.target));
-  const [act,setAct]=useState(String(data.actual));
-  const [sv,setSv]=useState(false);
+/* BRANCH PERFORMANCE CARD - read-only, synced from Cockpit */
+function BPCard({branch,data,reservations}){
   const reserved=useMemo(()=>reservations.filter(r=>r.branch===branch&&r.status!=='arrived').reduce((s,r)=>s+r.qty,0),[reservations,branch]);
   const remaining=Math.max(0,data.target-(data.actual+reserved));
   const combined=data.actual+reserved;
@@ -576,21 +503,22 @@ function BPCard({branch,data,reservations,onUpdate}){
   const dailyRaw=remaining>0?Math.ceil(remaining/28):0;
   const daily=dailyRaw>0?(Math.ceil(dailyRaw/4)*4):'—';
   const col=rCol(rate);const pfcl=rPf(rate);const bcl=rBadge(rate);
-  async function save(){setSv(true);await onUpdate(branch,{target:Math.max(0,parseInt(tgt)||0),actual:Math.max(0,parseInt(act)||0)});setSv(false);setEditing(false);}
   return h('div',{className:'card'},
     h('div',{className:'fxb mb3'},
-      h('div',{className:'fxa g2'},h('span',{className:'mono bld',style:{fontSize:17}},'B'+branch),h('span',{className:'badge '+bcl},rate.toFixed(1)+'%')),
-      h('button',{className:'btn bo bxs',onClick:()=>{setTgt(String(data.target));setAct(String(data.actual));setEditing(!editing);}},h(SEdt,{s:11}),editing?'ยกเลิก':'แก้ไข')
+      h('div',{className:'fxa g2'},
+        h('span',{className:'mono bld',style:{fontSize:17}},'B'+branch),
+        h('span',{className:'badge '+bcl},rate.toFixed(1)+'%')
+      ),
+      h('div',{className:'fxa',style:{gap:4,fontSize:10,color:'var(--gn)',fontWeight:700}},
+        h('span',null,'🔒'),h('span',null,'ซิงก์จาก Cockpit')
+      )
     ),
     h('div',{className:'pb pb-lg mb2'},h('div',{className:'pf '+pfcl,style:{width:Math.min(100,rate)+'%'}})),
-    h('div',{className:'fxb txs mu mb3'},h('span',null,'รวม '+combined+' / '+data.target+' เส้น'),h('span',{className:'mono sem '+col},rate.toFixed(1)+'%')),
-    editing?h('div',null,
-      h('div',{className:'fr2 mb3'},
-        h('div',null,h('label',{className:'fl'},'เป้าหมาย (เส้น/เดือน)'),h('input',{className:'fi',type:'number',min:0,value:tgt,onChange:e=>setTgt(e.target.value)})),
-        h('div',null,h('label',{className:'fl'},'ยอดขายจริง (เส้น)'),h('input',{className:'fi',type:'number',min:0,value:act,onChange:e=>setAct(e.target.value)}))
-      ),
-      h('button',{className:'btn bp bsm bw',onClick:save,disabled:sv},sv?h('span',{className:'spin',style:{width:14,height:14,borderWidth:2}}):h(SChk,{s:13}),'บันทึก')
-    ):h('div',{className:'g6c'},
+    h('div',{className:'fxb txs mu mb3'},
+      h('span',null,'รวม '+combined+' / '+data.target+' เส้น'),
+      h('span',{className:'mono sem '+col},rate.toFixed(1)+'%')
+    ),
+    h('div',{className:'g6c'},
       [['เป้าหมาย',data.target,'','เส้น/เดือน'],['ขายจริง',data.actual,'gn','เส้น'],['ยางจอง',reserved,'bl','เส้น'],['คงเหลือ',remaining>0?'-'+remaining:'✓',remaining>0?'rd':'gn',''],['ขาย/วัน',daily,'yw','เส้น/วัน'],['รายการจอง',reservations.filter(r=>r.branch===branch).length,'','รายการ']].map(([lbl,val,clr,unit],i)=>
         h('div',{key:i,className:'sc'},h('div',{className:'sc-l'},lbl),h('div',{className:'sc-v mono'+(clr?' '+clr:''),style:{fontSize:18}},val),unit&&h('div',{className:'sc-s'},unit))
       )
@@ -598,9 +526,11 @@ function BPCard({branch,data,reservations,onUpdate}){
   );
 }
 
-/* ── MENU 2 — DASHBOARD ── */
-function Menu2({branch,branchData,reservations,isAdmin,onUpdate,loading}){
+/* MENU 2 - DASHBOARD */
+function Menu2({branch,branchData,reservations,isAdmin,loading,onSyncCockpit}){
   const [view,setView]=useState(isAdmin?'all':'mine');
+  const [syncing,setSyncing]=useState(false);
+  async function doSync(){setSyncing(true);await onSyncCockpit(false);setSyncing(false);}
   const allStats=useMemo(()=>{
     let tgt=0,act=0,res=0;
     BRANCHES.forEach(b=>{const d=branchData[b]||{target:0,actual:0};const r=reservations.filter(x=>x.branch===b&&x.status!=='arrived').reduce((s,x)=>s+x.qty,0);tgt+=d.target;act+=d.actual;res+=r;});
@@ -616,8 +546,14 @@ function Menu2({branch,branchData,reservations,isAdmin,onUpdate,loading}){
   return h('div',null,
     h('div',{className:'sh'},
       h('div',null,h('div',{className:'st'},'ประสิทธิภาพสาขา'),h('div',{className:'ss'},isAdmin?'ข้อมูลรวมทุกสาขา':'สาขา '+branch)),
-      isAdmin&&h('div',{className:'fx g2'},
-        [['all','🌐 ทั้งหมด'],['mine','🏢 สาขาฉัน']].map(([v,l])=>h('button',{key:v,className:'btn bsm '+(view===v?'bp':'bo'),onClick:()=>setView(v)},l))
+      h('div',{className:'fx g2'},
+        h('button',{className:'btn bo bsm',onClick:doSync,disabled:syncing,style:{color:'var(--gn)',borderColor:'rgba(22,201,121,.4)'}},
+          syncing?h('span',{className:'spin',style:{width:13,height:13,borderWidth:2}}):h(SRef,{s:13}),
+          syncing?'กำลังซิงก์...':'ซิงก์ Cockpit'
+        ),
+        isAdmin&&h('div',{className:'fx g2'},
+          [['all','🌐 ทั้งหมด'],['mine','🏢 สาขาฉัน']].map(([v,l])=>h('button',{key:v,className:'btn bsm '+(view===v?'bp':'bo'),onClick:()=>setView(v)},l))
+        )
       )
     ),
     loading?h('div',{className:'emp'},h('div',{className:'spin'})):null,
@@ -625,7 +561,7 @@ function Menu2({branch,branchData,reservations,isAdmin,onUpdate,loading}){
       h('div',{className:'mbox'},
         h('div',{className:'sc-l mb3'},'🎯 Achievement Rate รวมทุกสาขา'),
         h('div',{className:'mnum '+rCol(allStats.rate)},allStats.rate.toFixed(1),h('span',{className:'munit'},' %')),
-        h('div',{className:'tsm mu mt2'},'(ขายจริง '+allStats.act+' + จอง '+allStats.res+') ÷ เป้า '+allStats.tgt+' เส้น')
+        h('div',{className:'tsm mu mt2'},'(ขายจริง '+allStats.act+' + จอง '+allStats.res+') / เป้า '+allStats.tgt+' เส้น')
       ),
       h('div',{className:'g4c'},
         [{l:'เป้าหมายรวม',v:allStats.tgt,c:'',u:'เส้น/เดือน'},{l:'ขายจริงรวม',v:allStats.act,c:'gn',u:'เส้น'},{l:'ยางจองรวม',v:allStats.res,c:'bl',u:'เส้น'},{l:'คงเหลือรวม',v:allStats.gap,c:'rd',u:'เส้น'}].map(({l,v,c,u},i)=>
@@ -635,8 +571,7 @@ function Menu2({branch,branchData,reservations,isAdmin,onUpdate,loading}){
       h('div',{className:'card'},
         h('div',{className:'fxa g2 mb3'},h(STrp),h('span',{className:'bld'},'อันดับสาขาตามอัตราความสำเร็จ')),
         rankings.map((r,i)=>{
-          const col=rCol(r.rate);const pfcl=rPf(r.rate);
-          const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+          const col=rCol(r.rate);const pfcl=rPf(r.rate);const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
           return h('div',{key:r.b,className:'rr'},
             h('span',{style:{fontFamily:'var(--mono)',fontSize:12,color:'var(--t3)',width:24,textAlign:'right',flexShrink:0}},medal||'#'+(i+1)),
             h('div',{style:{width:60,flexShrink:0}},h('div',{className:'mono bld',style:{fontSize:15}},'B'+r.b),h('div',{className:'txs mu'},r.actual+'/'+r.target)),
@@ -649,45 +584,33 @@ function Menu2({branch,branchData,reservations,isAdmin,onUpdate,loading}){
       )
     ),
     !loading&&(view==='mine'||!isAdmin)&&h('div',null,
-      h(BPCard,{branch,data:branchData[branch]||{target:80,actual:0},reservations,onUpdate}),
+      h(BPCard,{branch,data:branchData[branch]||{target:0,actual:0},reservations}),
       isAdmin&&h('div',null,
         h('div',{className:'st mb4',style:{marginTop:4}},'สาขาอื่นๆ ทั้งหมด'),
-        h('div',{className:'dash-2col'},BRANCHES.filter(b=>b!==branch).map(b=>h(BPCard,{key:b,branch:b,data:branchData[b]||{target:80,actual:0},reservations,onUpdate})))
+        h('div',{className:'dash-2col'},BRANCHES.filter(b=>b!==branch).map(b=>h(BPCard,{key:b,branch:b,data:branchData[b]||{target:0,actual:0},reservations})))
       )
     )
   );
 }
 
-/* ── MENU 3 — SCHEDULE ── */
+/* MENU 3 - FOLLOW-UP */
 function Menu3({branch,reservations,onArrived,onEdit,onDelete,isAdmin,loading}){
   const [search,setSearch]=useState('');
-  const [filt,setFilt]=useState('all'); // all | today | overdue
-
-  // Base: not yet arrived, scope by branch for staff
+  const [filt,setFilt]=useState('all');
   const base=useMemo(()=>{
     let l=reservations.filter(r=>r.status!=='arrived');
     if(!isAdmin)l=l.filter(r=>r.branch===branch);
     return l;
   },[reservations,branch,isAdmin]);
-
-  // Follow-up = due today OR overdue (service date is today or past, not arrived)
   const followups=useMemo(()=>base.filter(r=>daysDiff(r.service_date)<=0),[base]);
-
-  const cnts=useMemo(()=>({
-    total:followups.length,
-    today:followups.filter(r=>daysDiff(r.service_date)===0).length,
-    overdue:followups.filter(r=>daysDiff(r.service_date)<0).length,
-  }),[followups]);
-
+  const cnts=useMemo(()=>({total:followups.length,today:followups.filter(r=>daysDiff(r.service_date)===0).length,overdue:followups.filter(r=>daysDiff(r.service_date)<0).length}),[followups]);
   const list=useMemo(()=>{
     let l=followups;
     if(filt==='today')l=l.filter(r=>daysDiff(r.service_date)===0);
     else if(filt==='overdue')l=l.filter(r=>daysDiff(r.service_date)<0);
     if(search.trim())l=l.filter(r=>r.customer_name.includes(search)||r.phone.includes(search));
-    // Most overdue first, then today
     return [...l].sort((a,b)=>daysDiff(a.service_date)-daysDiff(b.service_date));
   },[followups,filt,search]);
-
   return h('div',null,
     h('div',{className:'sh'},
       h('div',null,h('div',{className:'st'},'รายการติดตามลูกค้า'),h('div',{className:'ss'},(isAdmin?'ทุกสาขา':'สาขา '+branch)+' · ต้องติดตาม '+cnts.total+' ราย')),
@@ -713,8 +636,7 @@ function Menu3({branch,reservations,onArrived,onEdit,onDelete,isAdmin,loading}){
   );
 }
 
-
-/* ── ROOT APP ── */
+/* ROOT APP */
 function App(){
   const [branch,setBranch]=useState(()=>{try{return localStorage.getItem('tt_branch')||'003';}catch{return'003';}});
   function selectBranch(b){setBranch(b);try{localStorage.setItem('tt_branch',b);}catch{}}
@@ -726,11 +648,15 @@ function App(){
   const [toasts,setToasts]=useState([]);
   const [editingRes,setEditingRes]=useState(null);
   const [showForm,setShowForm]=useState(false);
+  const [lastCockpitSync,setLastCockpitSync]=useState(null);
   const [loadR,setLoadR]=useState(true);
   const [loadB,setLoadB]=useState(true);
   const [saving,setSaving]=useState(false);
   const [synced,setSynced]=useState(false);
   const isAdmin=role==='admin';
+  const isFirstLoad=useRef(true);
+
+  useEffect(()=>{ if(editingRes) setShowForm(true); },[editingRes]);
 
   function toast(msg,type){
     const id=Math.random().toString(36).slice(2);
@@ -740,172 +666,172 @@ function App(){
     setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)),3500);
   }
 
-  // Track whether this is the initial load (show spinner) or a background refresh (silent)
-  const isFirstLoad = React.useRef(true);
-  // Open form whenever editingRes is set (from schedule edit or reservation edit)
-  useEffect(()=>{ if(editingRes) setShowForm(true); },[editingRes]);
-
   async function loadRes(silent=false){
-    if(!sb){ setLoadR(false); return; }
-    if(!silent) setLoadR(true);
+    if(!sb){setLoadR(false);return;}
+    if(!silent)setLoadR(true);
     try{
       const {data,error}=await sb.from('tt_reservations').select('*').order('service_date');
-      if(error){ toast('โหลดข้อมูลไม่สำเร็จ: '+error.message,'error'); }
+      if(error){if(!silent)toast('โหลดข้อมูลไม่สำเร็จ: '+error.message,'error');}
       else if(data){
-        // Smart merge: update existing rows, add new ones, remove deleted ones.
-        // This avoids replacing the entire list (which would reset any in-flight UI state).
         setReservations(prev=>{
-          const serverIds = new Set(data.map(r=>r.id));
-          const localIds  = new Set(prev.map(r=>r.id));
-          // Keep rows only the server has removed; add/update from server
-          const merged = data.map(serverRow=>{
-            const local = prev.find(r=>r.id===serverRow.id);
-            // If identical, keep local reference (no re-render churn)
-            if(local && JSON.stringify(local)===JSON.stringify(serverRow)) return local;
+          const serverIds=new Set(data.map(r=>r.id));
+          const merged=data.map(serverRow=>{
+            const local=prev.find(r=>r.id===serverRow.id);
+            if(local&&JSON.stringify(local)===JSON.stringify(serverRow))return local;
             return serverRow;
           });
-          // Preserve any local-only rows (optimistic inserts not yet confirmed by server)
-          prev.forEach(r=>{ if(!serverIds.has(r.id)) merged.push(r); });
+          prev.forEach(r=>{if(!serverIds.has(r.id))merged.push(r);});
           return merged;
         });
       }
-    }catch(e){ if(!silent) toast('เชื่อมต่อฐานข้อมูลไม่ได้','error'); }
-    if(!silent) setLoadR(false);
-    isFirstLoad.current = false;
+    }catch(e){if(!silent)toast('เชื่อมต่อฐานข้อมูลไม่ได้','error');}
+    if(!silent)setLoadR(false);
+    isFirstLoad.current=false;
   }
 
   async function loadBD(silent=false){
-    if(!sb){ setLoadB(false); return; }
-    if(!silent) setLoadB(true);
+    if(!sb){setLoadB(false);return;}
+    if(!silent)setLoadB(true);
     try{
       const {data,error}=await sb.from('tt_branch_data').select('*');
-      if(error){ if(!silent) toast('โหลดข้อมูลสาขาไม่สำเร็จ','error'); }
+      if(error){if(!silent)toast('โหลดข้อมูลสาขาไม่สำเร็จ','error');}
       else if(data){
-        // Smart merge: only update branches that actually changed
         setBranchData(prev=>{
-          const next={...prev};
-          let changed=false;
-          data.forEach(r=>{
-            const p=prev[r.branch];
-            if(!p||p.target!==r.target||p.actual!==r.actual){
-              next[r.branch]={target:r.target,actual:r.actual};
-              changed=true;
-            }
-          });
-          return changed?next:prev; // return same reference if nothing changed = no re-render
+          const next={...prev};let changed=false;
+          data.forEach(r=>{const p=prev[r.branch];if(!p||p.target!==r.target||p.actual!==r.actual){next[r.branch]={target:r.target,actual:r.actual};changed=true;}});
+          return changed?next:prev;
         });
       }
-    }catch(e){ if(!silent) toast('เชื่อมต่อฐานข้อมูลไม่ได้','error'); }
-    if(!silent) setLoadB(false);
+    }catch(e){if(!silent)toast('เชื่อมต่อฐานข้อมูลไม่ได้','error');}
+    if(!silent)setLoadB(false);
+  }
+
+  async function syncFromCockpit(silent=false){
+    if(!cp){if(!silent)toast('ไม่ได้เชื่อมต่อ Cockpit Intelligence','error');return;}
+    try{
+      const [cfgRes,deRes,tgtRes]=await Promise.all([
+        cp.from('app_data').select('value').eq('key','cp_cfg').single(),
+        cp.from('app_data').select('value').eq('key','cp_de').single(),
+        cp.from('app_data').select('value').eq('key','cp_tgt').single(),
+      ]);
+      if(cfgRes.error||!cfgRes.data){if(!silent)toast('ดึงข้อมูล Cockpit ไม่ได้','error');return;}
+      if(deRes.error||!deRes.data){if(!silent)toast('ดึงยอดขายรายวันไม่ได้','error');return;}
+      if(tgtRes.error||!tgtRes.data){if(!silent)toast('ดึงเป้าหมายไม่ได้','error');return;}
+      const todayDay=parseInt(cfgRes.data.value.todayDay)||1;
+      const daily=deRes.data.value;
+      const targets=tgtRes.data.value;
+      // คำนวณยอดขายสะสม
+      const actualMap={};
+      Object.keys(daily).forEach(branch=>{
+        let total=0;
+        for(let d=1;d<=todayDay;d++){
+          const day=daily[branch][String(d)];
+          if(day)total+=Math.max(0,parseInt(day.tire)||0);
+        }
+        actualMap[branch]=total;
+      });
+      // ดึงเป้าหมาย
+      const targetMap={};
+      Object.keys(targets).forEach(branch=>{
+        const t=parseInt(targets[branch].tire)||0;
+        if(t>0)targetMap[branch]=t;
+      });
+      // เขียนลง DB
+      if(sb){
+        const allB=new Set([...Object.keys(actualMap),...Object.keys(targetMap)]);
+        for(const b of allB){
+          const p={};
+          if(actualMap[b]!==undefined)p.actual=actualMap[b];
+          if(targetMap[b]!==undefined)p.target=targetMap[b];
+          if(Object.keys(p).length>0)await sb.from('tt_branch_data').update(p).eq('branch',b);
+        }
+      }
+      // อัปเดต local state
+      setBranchData(prev=>{
+        const next={...prev};
+        const allB=new Set([...Object.keys(actualMap),...Object.keys(targetMap)]);
+        allB.forEach(b=>{
+          if(next[b]){
+            if(actualMap[b]!==undefined)next[b]={...next[b],actual:actualMap[b]};
+            if(targetMap[b]!==undefined)next[b]={...next[b],target:targetMap[b]};
+          }
+        });
+        return next;
+      });
+      const cnt=new Set([...Object.keys(actualMap),...Object.keys(targetMap)]).size;
+      if(!silent)toast('ซิงก์ยอดขาย + เป้าหมายจาก Cockpit เรียบร้อย ('+cnt+' สาขา)');
+      setLastCockpitSync(new Date());
+    }catch(e){if(!silent)toast('ซิงก์ Cockpit ล้มเหลว: '+(e.message||''),'error');}
   }
 
   useEffect(()=>{
-    loadRes(); loadBD();
-    if(!sb) return;
-    let chR=null, chB=null, pollTimer=null;
-    // Try Realtime (WebSocket). If blocked (insecure context), fall back to polling.
+    loadRes();loadBD();
+    setTimeout(()=>syncFromCockpit(true),2000);
+    if(!sb)return;
+    let chR=null,chB=null,pollTimer=null;
     try{
-      chR=sb.channel('tt_res_ch')
-        .on('postgres_changes',{event:'*',schema:'public',table:'tt_reservations'},p=>{
-          if(p.eventType==='INSERT')setReservations(prev=>{if(prev.find(r=>r.id===p.new.id))return prev;return [...prev,p.new];});
-          else if(p.eventType==='UPDATE')setReservations(prev=>prev.map(r=>r.id===p.new.id?p.new:r));
-          else if(p.eventType==='DELETE')setReservations(prev=>prev.filter(r=>r.id!==p.old.id));
-        }).subscribe(s=>{if(s==='SUBSCRIBED')setSynced(true);});
-      chB=sb.channel('tt_bd_ch')
-        .on('postgres_changes',{event:'*',schema:'public',table:'tt_branch_data'},p=>{
-          if(p.new){const r=p.new;setBranchData(prev=>({...prev,[r.branch]:{target:r.target,actual:r.actual}}));}
-        }).subscribe();
-    }catch(e){
-      // WebSocket unavailable — use polling every 8s instead
-      console.warn('Realtime unavailable, using polling:', e.message);
-      setSynced(false);
-    }
-    // Polling fallback (only when realtime is off; skips when a form is open to protect user input)
+      chR=sb.channel('tt_res_ch').on('postgres_changes',{event:'*',schema:'public',table:'tt_reservations'},p=>{
+        if(p.eventType==='INSERT')setReservations(prev=>{if(prev.find(r=>r.id===p.new.id))return prev;return [...prev,p.new];});
+        else if(p.eventType==='UPDATE')setReservations(prev=>prev.map(r=>r.id===p.new.id?p.new:r));
+        else if(p.eventType==='DELETE')setReservations(prev=>prev.filter(r=>r.id!==p.old.id));
+      }).subscribe(s=>{if(s==='SUBSCRIBED')setSynced(true);});
+      chB=sb.channel('tt_bd_ch').on('postgres_changes',{event:'*',schema:'public',table:'tt_branch_data'},p=>{
+        if(p.new){const r=p.new;setBranchData(prev=>({...prev,[r.branch]:{target:r.target,actual:r.actual}}));}
+      }).subscribe();
+    }catch(e){console.warn('Realtime unavailable:',e.message);}
     pollTimer=setInterval(()=>{
-      // Never refresh while user is actively filling in a form
-      if(document.querySelector('.sheet')) return;
-      loadRes(true); loadBD(true); // silent=true: no spinner, no error toast
-    }, 30000);
+      if(document.querySelector('.sheet'))return;
+      loadRes(true);loadBD(true);syncFromCockpit(true);
+    },30000);
     return()=>{
-      try{ if(chR)sb.removeChannel(chR); if(chB)sb.removeChannel(chB); }catch(e){}
+      try{if(chR)sb.removeChannel(chR);if(chB)sb.removeChannel(chB);}catch(e){}
       if(pollTimer)clearInterval(pollTimer);
     };
   },[]);
 
   async function handleSave(data){
-    if(!sb){ toast('ยังไม่ได้เชื่อมต่อฐานข้อมูล','error'); return; }
+    if(!sb){toast('ยังไม่ได้เชื่อมต่อฐานข้อมูล','error');return;}
     setSaving(true);
     const isEdit=reservations.some(r=>r.id===data.id);
-    const prevSnapshot=reservations;
+    const prevSnap=reservations;
     const payload={id:data.id,branch:data.branch,customer_name:data.customer_name,phone:data.phone,brand:data.brand,model:data.model,size:data.size,qty:data.qty,reservation_date:data.reservation_date,service_date:data.service_date,status:data.status||'upcoming'};
-    // Optimistic UI update (works even when realtime is off)
     if(isEdit)setReservations(prev=>prev.map(r=>r.id===data.id?{...r,...payload}:r));
     else setReservations(prev=>[...prev,payload]);
     let ok=false;
     try{
-      if(isEdit){
-        const {error}=await sb.from('tt_reservations').update(payload).eq('id',data.id);
-        if(error)toast('อัปเดตไม่สำเร็จ: '+error.message,'error');else{ok=true;toast('อัปเดตการจองแล้ว');}
-      }else{
-        const {error}=await sb.from('tt_reservations').insert([payload]);
-        if(error)toast('บันทึกไม่สำเร็จ: '+error.message,'error');else{ok=true;toast('บันทึกการจองใหม่แล้ว');}
-      }
-    }catch(e){ toast('บันทึกไม่สำเร็จ: '+(e.message||''),'error'); }
-    // Rollback optimistic update if the DB write failed
-    if(!ok) setReservations(prevSnapshot);
-    // Note: no loadRes() here — optimistic update is already applied.
-    // Background polling (every 30s) will sync any discrepancies safely.
+      if(isEdit){const {error}=await sb.from('tt_reservations').update(payload).eq('id',data.id);if(error)toast('อัปเดตไม่สำเร็จ: '+error.message,'error');else{ok=true;toast('อัปเดตการจองแล้ว');}}
+      else{const {error}=await sb.from('tt_reservations').insert([payload]);if(error)toast('บันทึกไม่สำเร็จ: '+error.message,'error');else{ok=true;toast('บันทึกการจองใหม่แล้ว');}}
+    }catch(e){toast('บันทึกไม่สำเร็จ: '+(e.message||''),'error');}
+    if(!ok)setReservations(prevSnap);
     setSaving(false);setEditingRes(null);
   }
 
   async function handleArrived(id){
-    if(!sb){ toast('ยังไม่ได้เชื่อมต่อฐานข้อมูล','error'); return; }
+    if(!sb){toast('ยังไม่ได้เชื่อมต่อ','error');return;}
     setReservations(prev=>prev.map(r=>r.id===id?{...r,status:'arrived'}:r));
-    try{
-      const {error}=await sb.from('tt_reservations').update({status:'arrived'}).eq('id',id);
-      if(error)toast('อัปเดตสถานะไม่สำเร็จ','error');else toast('ยืนยันลูกค้าเข้ารับบริการแล้ว');
-    }catch(e){ toast('อัปเดตสถานะไม่สำเร็จ','error'); }
+    try{const {error}=await sb.from('tt_reservations').update({status:'arrived'}).eq('id',id);if(error)toast('อัปเดตสถานะไม่สำเร็จ','error');else toast('ยืนยันลูกค้าเข้ารับบริการแล้ว');}
+    catch(e){toast('อัปเดตสถานะไม่สำเร็จ','error');}
   }
 
   async function handleDelete(id){
-    if(!sb){ toast('ยังไม่ได้เชื่อมต่อฐานข้อมูล','error'); return; }
+    if(!sb){toast('ยังไม่ได้เชื่อมต่อ','error');return;}
     setReservations(prev=>prev.filter(r=>r.id!==id));
-    try{
-      const {error}=await sb.from('tt_reservations').delete().eq('id',id);
-      if(error)toast('ลบไม่สำเร็จ','error');else toast('ลบรายการแล้ว','error');
-    }catch(e){ toast('ลบไม่สำเร็จ','error'); }
-  }
-
-  async function handleUpdateBD(b,data){
-    if(!sb){ toast('ยังไม่ได้เชื่อมต่อฐานข้อมูล','error'); return; }
-    setBranchData(prev=>({...prev,[b]:{target:data.target,actual:data.actual}}));
-    try{
-      const {error}=await sb.from('tt_branch_data').upsert({branch:b,target:data.target,actual:data.actual});
-      if(error)toast('อัปเดตข้อมูลสาขาไม่สำเร็จ','error');else toast('อัปเดตสาขา '+b+' แล้ว');
-    }catch(e){ toast('อัปเดตข้อมูลสาขาไม่สำเร็จ','error'); }
+    try{const {error}=await sb.from('tt_reservations').delete().eq('id',id);if(error)toast('ลบไม่สำเร็จ','error');else toast('ลบรายการแล้ว','error');}
+    catch(e){toast('ลบไม่สำเร็จ','error');}
   }
 
   function handleEditFromSchedule(r){setEditingRes(r);setTab(0);}
 
   const overdueCount=useMemo(()=>reservations.filter(r=>(isAdmin||r.branch===branch)&&isOv(r)).length,[reservations,branch,isAdmin]);
 
-  const TABS=[
-    {icon:h(SDoc,{s:20}),label:'รายการจอง'},
-    {icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},
-    {icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'},
-  ];
-
-  const PAGE=[
-    {t:'รายการจอง',s:'สาขา '+branch},
-    {t:'ประสิทธิภาพ',s:isAdmin?'ทุกสาขา':'สาขา '+branch},
-    {t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch},
-  ];
+  const TABS=[{icon:h(SDoc,{s:20}),label:'รายการจอง'},{icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},{icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'}];
+  const PAGE=[{t:'รายการจอง',s:'สาขา '+branch},{t:'ประสิทธิภาพสาขา',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch}];
+  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.8');
 
   return h('div',{id:'app'},
-
     /* SIDEBAR */
     h('div',{className:'sidebar'},
-      h('div',{className:'sb-logo'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.5'))),
+      h('div',{className:'sb-logo'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',vBadge)),
       h('div',{className:'sb-branch'},
         h('div',{className:'sb-lbl'},'สาขาที่ทำงาน'),
         h('div',{className:'sb-pill',onClick:()=>setShowBM(true)},
@@ -926,22 +852,23 @@ function App(){
         )
       )
     ),
-
     /* MAIN */
     h('div',{className:'main-area'},
-
-      /* TOPBAR desktop */
+      /* TOPBAR */
       h('div',{className:'topbar'},
         h('div',{className:'tb-left'},h('div',{className:'tb-title'},PAGE[tab].t),h('div',{className:'tb-sub'},PAGE[tab].s)),
         h('div',{className:'tb-right'},
-          h('div',{className:'sync-chip'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'ซิงก์ Realtime':'อัปเดตอัตโนมัติ'),
-          h('button',{className:'btn bo bsm',onClick:()=>{loadRes();loadBD();}},h(SRef),'รีเฟรช')
+          lastCockpitSync&&h('div',{className:'fxa',style:{gap:5,fontSize:10,color:'var(--gn)'}},
+            h('div',{style:{width:6,height:6,borderRadius:'50%',background:'var(--gn)',flexShrink:0}}),
+            'Cockpit '+lastCockpitSync.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})
+          ),
+          h('div',{className:'sync-chip'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'ซิงก์ Realtime':'อัตโนมัติ'),
+          h('button',{className:'btn bo bsm',onClick:()=>{loadRes();loadBD();syncFromCockpit(true);}},h(SRef),'รีเฟรช')
         )
       ),
-
       /* MOBILE HEADER */
       h('div',{className:'m-hdr'},
-        h('div',{className:'m-hdr-l'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.5'))),
+        h('div',{className:'m-hdr-l'},h('div',{className:'lmark'},'TT'),h('div',{className:'lname'},h('b',null,'Tire'),'Track',vBadge)),
         h('div',{className:'m-hdr-r'},
           h('div',{className:'sync-chip'},h('div',{className:'ldot'+(synced?'':' off')}),synced?'สด':'อัตโนมัติ'),
           h('div',{className:'sb-pill',style:{padding:'4px 10px'},onClick:()=>setShowBM(true)},
@@ -953,40 +880,28 @@ function App(){
           )
         )
       ),
-
       /* PAGE CONTENT */
       h('div',{className:'page'},
         tab===0&&h(Menu1,{branch,reservations,loading:loadR,onSave:handleSave,onArrived:handleArrived,onDelete:handleDelete,editingRes,setEditingRes,saving,showForm,setShowForm}),
-        tab===1&&h(Menu2,{branch,branchData,reservations,isAdmin,onUpdate:handleUpdateBD,loading:loadB}),
+        tab===1&&h(Menu2,{branch,branchData,reservations,isAdmin,loading:loadB,onSyncCockpit:syncFromCockpit}),
         tab===2&&h(Menu3,{branch,reservations,onArrived:handleArrived,onEdit:handleEditFromSchedule,onDelete:handleDelete,isAdmin,loading:loadR})
       ),
-
-      /* BOTTOM NAV mobile */
+      /* BOTTOM NAV */
       h('div',{className:'bnav'},
         TABS.map(({icon,label},i)=>h('button',{key:i,className:'ntab'+(tab===i?' on':''),onClick:()=>setTab(i)},
           icon,label,i===2&&overdueCount>0&&h('div',{className:'nb'},overdueCount>9?'9+':overdueCount)
         ))
       )
     ),
-
-    /* ── ResForm at App level: survives tab switches & background re-renders ── */
-    showForm&&h(ResForm,{
-      branch: editingRes?editingRes.branch:branch,
-      onSave: d=>{handleSave(d);setShowForm(false);setEditingRes(null);},
-      onClose: ()=>{setShowForm(false);setEditingRes(null);},
-      editing: editingRes,
-      saving
-    }),
+    /* MODALS */
+    showForm&&h(ResForm,{branch:editingRes?editingRes.branch:branch,onSave:d=>{handleSave(d);setShowForm(false);setEditingRes(null);},onClose:()=>{setShowForm(false);setEditingRes(null);},editing:editingRes,saving}),
     showBM&&h(BranchModal,{cur:branch,onSelect:selectBranch,onClose:()=>setShowBM(false)}),
     h(Toasts,{list:toasts})
   );
 }
 
-try{
-  ReactDOM.createRoot(document.getElementById('app')).render(h(App));
-}catch(e){
-  document.getElementById('app').innerHTML='<div style="padding:40px;text-align:center;font-family:sans-serif;color:#edf0f8"><div style="font-size:40px;margin-bottom:16px">⚠️</div><div style="font-size:18px;font-weight:700;margin-bottom:8px">เกิดข้อผิดพลาด</div><div style="font-size:14px;color:#8e97b4">'+(e.message||'ไม่สามารถโหลดแอปได้')+'</div></div>';
-}
+try{ReactDOM.createRoot(document.getElementById('app')).render(h(App));}
+catch(e){document.getElementById('app').innerHTML='<div style="padding:40px;text-align:center;color:#edf0f8;font-family:sans-serif"><div style="font-size:40px;margin-bottom:16px">⚠️</div><div style="font-size:18px;font-weight:700;margin-bottom:8px">เกิดข้อผิดพลาด</div><div style="font-size:14px;color:#8e97b4">'+(e.message||'')+'</div></div>';}
 })();
 </script>
 </body>
