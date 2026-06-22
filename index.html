@@ -372,16 +372,19 @@ function BranchModal({cur,onSelect,onClose}){return h('div',{className:'ov',onCl
 
 /* RESERVATION FORM */
 function ResForm({branch,onSave,onClose,editing,saving}){
-  const init=editing?{...editing}:{customer_name:'',phone:'',customer_type:CUST_TYPES[0],brand:BRANDS[0],model:'',size:'',qty:4,reservation_date:todayStr(),service_date:'',status:'upcoming'};
+  const init=editing?{...editing}:{customer_name:'',phone:'',customer_type:CUST_TYPES[0],brand:BRANDS[0],model:'',size:'',qty:4,size2:'',qty2:'',reservation_date:todayStr(),service_date:'',status:'upcoming'};
   const [f,setF]=useState(init);
+  const [dual,setDual]=useState(!!(editing&&editing.size2));
   const [err,setErr]=useState('');
   const set=(k,v)=>setF(p=>({...p,[k]:v}));
   function save(){
     if(!f.customer_name.trim()){setErr('กรุณากรอกชื่อลูกค้า');return;}
     if(!f.phone.trim()){setErr('กรุณากรอกเบอร์โทรศัพท์');return;}
     if(!f.service_date){setErr('กรุณาเลือกวันนัดเข้ารับบริการ');return;}
+    if(dual&&!f.size2.trim()){setErr('กรุณากรอกขนาดยางชุดที่ 2 หรือยกเลิกการเพิ่มขนาดที่ 2');return;}
     setErr('');
-    onSave({...f,branch,id:editing?editing.id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)),created_at:editing?editing.created_at:new Date().toISOString()});
+    const payload={...f, size2: dual?f.size2:null, qty2: dual?(parseInt(f.qty2)||0):null};
+    onSave({...payload,branch,id:editing?editing.id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)),created_at:editing?editing.created_at:new Date().toISOString()});
   }
   const SL2=({ico,txt})=>h('div',{className:'txs sem bl upr',style:{marginBottom:8,marginTop:4}},ico+' '+txt);
   return h('div',{className:'ov',onClick:onClose},
@@ -401,6 +404,14 @@ function ResForm({branch,onSave,onClose,editing,saving}){
         h('div',{className:'fr2'},
           h('div',{className:'fg'},h('label',{className:'fl'},'ขนาดยาง'),h('input',{className:'fi',placeholder:'เช่น 195/65R15',value:f.size,onChange:e=>set('size',e.target.value)})),
           h('div',{className:'fg'},h('label',{className:'fl'},'จำนวน (เส้น)'),h('select',{className:'fsl',value:f.qty,onChange:e=>set('qty',parseInt(e.target.value))},[1,2,3,4,5,6,8].map(n=>h('option',{key:n,value:n},n+' เส้น'))))
+        ),
+        h('label',{style:{display:'flex',alignItems:'center',gap:8,cursor:'pointer',marginBottom:dual?14:4,marginTop:-2,userSelect:'none'}},
+          h('input',{type:'checkbox',checked:dual,onChange:e=>setDual(e.target.checked),style:{width:17,height:17,accentColor:'var(--ac)',cursor:'pointer'}}),
+          h('span',{className:'tsm',style:{color:'var(--t2)'}},'🛞 รถคันนี้ใช้ยาง 2 ขนาด (หน้า/หลังต่างกัน)')
+        ),
+        dual&&h('div',{className:'fr2',style:{marginBottom:14,background:'var(--s2)',padding:12,borderRadius:'var(--rs)',border:'1px solid var(--bd)'}},
+          h('div',{className:'fg',style:{marginBottom:0}},h('label',{className:'fl'},'ขนาดยาง (ชุดที่ 2)'),h('input',{className:'fi',placeholder:'เช่น 225/45R18',value:f.size2||'',onChange:e=>set('size2',e.target.value)})),
+          h('div',{className:'fg',style:{marginBottom:0}},h('label',{className:'fl'},'จำนวน (ชุดที่ 2)'),h('select',{className:'fsl',value:f.qty2||2,onChange:e=>set('qty2',parseInt(e.target.value))},[1,2,3,4].map(n=>h('option',{key:n,value:n},n+' เส้น'))))
         ),
         h('div',{className:'dv'}),
         h(SL2,{ico:'📅',txt:'วันที่'}),
@@ -441,7 +452,7 @@ function ResCard({res,onArrived,onEdit,onDelete,showBranch}){
     ),
     h('div',{className:'rc-det'},
       h('div',null,h('div',{className:'rc-dl'},'แบรนด์ / รุ่น'),h('div',{className:'rc-dv'},res.brand+(res.model?' · '+res.model:''))),
-      h('div',null,h('div',{className:'rc-dl'},'ขนาด x เส้น'),h('div',{className:'rc-dv mono'},res.size+' x '+res.qty)),
+      h('div',null,h('div',{className:'rc-dl'},'ขนาด x เส้น'),h('div',{className:'rc-dv mono'},res.size+' x '+res.qty+(res.size2?'  •  '+res.size2+' x '+res.qty2:''))),
       h('div',null,h('div',{className:'rc-dl'},'วันที่จอง'),h('div',{className:'rc-dv'},fmtDate(res.reservation_date))),
       h('div',null,h('div',{className:'rc-dl'},'วันนัดบริการ'),h('div',{className:'rc-dv'+(ov?' rd':'')},fmtDate(res.service_date)))
     ),
@@ -499,7 +510,7 @@ function Menu1({branch,reservations,loading,onSave,onArrived,onDelete,editingRes
 
 /* BRANCH PERFORMANCE CARD - read-only, synced from Cockpit */
 function BPCard({branch,data,reservations}){
-  const reserved=useMemo(()=>reservations.filter(r=>r.branch===branch&&r.status!=='arrived').reduce((s,r)=>s+r.qty,0),[reservations,branch]);
+  const reserved=useMemo(()=>reservations.filter(r=>r.branch===branch&&r.status!=='arrived').reduce((s,r)=>s+r.qty+(r.qty2||0),0),[reservations,branch]);
   const remaining=Math.max(0,data.target-(data.actual+reserved));
   const combined=data.actual+reserved;
   const rate=data.target>0?(combined/data.target*100):0;
@@ -536,13 +547,13 @@ function Menu2({branch,branchData,reservations,isAdmin,loading,onSyncCockpit}){
   async function doSync(){setSyncing(true);await onSyncCockpit(false);setSyncing(false);}
   const allStats=useMemo(()=>{
     let tgt=0,act=0,res=0;
-    BRANCHES.forEach(b=>{const d=branchData[b]||{target:0,actual:0};const r=reservations.filter(x=>x.branch===b&&x.status!=='arrived').reduce((s,x)=>s+x.qty,0);tgt+=d.target;act+=d.actual;res+=r;});
+    BRANCHES.forEach(b=>{const d=branchData[b]||{target:0,actual:0};const r=reservations.filter(x=>x.branch===b&&x.status!=='arrived').reduce((s,x)=>s+x.qty+(x.qty2||0),0);tgt+=d.target;act+=d.actual;res+=r;});
     const rate=tgt>0?((act+res)/tgt*100):0;
     return {tgt,act,res,gap:Math.max(0,tgt-act),rate};
   },[branchData,reservations]);
   const rankings=useMemo(()=>BRANCHES.map(b=>{
     const d=branchData[b]||{target:0,actual:0};
-    const r=reservations.filter(x=>x.branch===b&&x.status!=='arrived').reduce((s,x)=>s+x.qty,0);
+    const r=reservations.filter(x=>x.branch===b&&x.status!=='arrived').reduce((s,x)=>s+x.qty+(x.qty2||0),0);
     const rate=d.target>0?((d.actual+r)/d.target*100):0;
     return {b,rate,actual:d.actual,target:d.target,res:r};
   }).sort((a,z)=>z.rate-a.rate),[branchData,reservations]);
@@ -669,6 +680,20 @@ function App(){
     setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==id)),3500);
   }
 
+  // Tracks IDs that were just changed locally (optimistic update) so background
+  // polling/realtime doesn't accidentally overwrite them with stale server data
+  // before the write has fully committed.
+  const recentlyChanged = useRef(new Map()); // id -> expiry timestamp
+  function markRecentlyChanged(id, ms=4000){
+    recentlyChanged.current.set(id, Date.now()+ms);
+  }
+  function isRecentlyChanged(id){
+    const exp = recentlyChanged.current.get(id);
+    if(!exp) return false;
+    if(Date.now() > exp){ recentlyChanged.current.delete(id); return false; }
+    return true;
+  }
+
   async function loadRes(silent=false){
     if(!sb){setLoadR(false);return;}
     if(!silent)setLoadR(true);
@@ -679,6 +704,13 @@ function App(){
         setReservations(prev=>{
           const serverIds=new Set(data.map(r=>r.id));
           const merged=data.map(serverRow=>{
+            // Never let a background refresh overwrite a row the user just edited —
+            // protects against the optimistic update being clobbered by a server
+            // read that raced ahead of the write actually committing.
+            if(isRecentlyChanged(serverRow.id)){
+              const local=prev.find(r=>r.id===serverRow.id);
+              if(local) return local;
+            }
             const local=prev.find(r=>r.id===serverRow.id);
             if(local&&JSON.stringify(local)===JSON.stringify(serverRow))return local;
             return serverRow;
@@ -797,7 +829,8 @@ function App(){
     setSaving(true);
     const isEdit=reservations.some(r=>r.id===data.id);
     const prevSnap=reservations;
-    const payload={id:data.id,branch:data.branch,customer_name:data.customer_name,phone:data.phone,customer_type:data.customer_type||CUST_TYPES[0],brand:data.brand,model:data.model,size:data.size,qty:data.qty,reservation_date:data.reservation_date,service_date:data.service_date,status:data.status||'upcoming'};
+    const payload={id:data.id,branch:data.branch,customer_name:data.customer_name,phone:data.phone,customer_type:data.customer_type||CUST_TYPES[0],brand:data.brand,model:data.model,size:data.size,qty:data.qty,size2:data.size2||null,qty2:data.qty2||null,reservation_date:data.reservation_date,service_date:data.service_date,status:data.status||'upcoming'};
+    markRecentlyChanged(data.id);
     if(isEdit)setReservations(prev=>prev.map(r=>r.id===data.id?{...r,...payload}:r));
     else setReservations(prev=>[...prev,payload]);
     let ok=false;
@@ -811,6 +844,7 @@ function App(){
 
   async function handleArrived(id){
     if(!sb){toast('ยังไม่ได้เชื่อมต่อ','error');return;}
+    markRecentlyChanged(id);
     setReservations(prev=>prev.map(r=>r.id===id?{...r,status:'arrived'}:r));
     try{const {error}=await sb.from('tt_reservations').update({status:'arrived'}).eq('id',id);if(error)toast('อัปเดตสถานะไม่สำเร็จ','error');else toast('ยืนยันลูกค้าเข้ารับบริการแล้ว');}
     catch(e){toast('อัปเดตสถานะไม่สำเร็จ','error');}
@@ -829,7 +863,7 @@ function App(){
 
   const TABS=[{icon:h(SDoc,{s:20}),label:'รายการจอง'},{icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},{icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'}];
   const PAGE=[{t:'รายการจอง',s:'สาขา '+branch},{t:'ประสิทธิภาพสาขา',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch}];
-  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v2.9');
+  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v3.1');
 
   return h('div',{id:'app'},
     /* SIDEBAR */
