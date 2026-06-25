@@ -341,6 +341,16 @@ function fmtDate(s){if(!s)return'—';return new Date(s+'T00:00:00').toLocaleDat
 function fmtDay(s){return new Date(s+'T00:00:00').toLocaleDateString('th-TH',{weekday:'long'});}
 function daysDiff(s){const n=new Date();n.setHours(0,0,0,0);return Math.ceil((new Date(s+'T00:00:00')-n)/86400000);}
 function isOv(r){return r.status!=='arrived'&&daysDiff(r.service_date)<0;}
+// Reservations should only count toward this month's "reserved tires" stat if their
+// service_date actually falls within the current calendar month. A booking made now
+// for next month's service date is recorded immediately, but shouldn't inflate this
+// month's achievement rate — it will count automatically once that month arrives.
+function isThisMonth(dateStr){
+  if(!dateStr) return false;
+  const d=new Date(dateStr+'T00:00:00');
+  const n=new Date();
+  return d.getFullYear()===n.getFullYear() && d.getMonth()===n.getMonth();
+}
 function rCol(v){return v>=100?'gn':v>=90?'yw':'rd';}
 function rBadge(v){return v>=100?'bgg':v>=90?'bgy':'bgr';}
 function rPf(v){return v>=100?'pg':v>=90?'py':'pr';}
@@ -445,7 +455,8 @@ function ResCard({res,onArrived,onEdit,onDelete,showBranch}){
         h('div',{className:'rc-name trunc'},res.customer_name),
         h('div',{className:'rc-phone'},h(SPh),h('span',{className:'mono'},res.phone),
           showBranch&&h('span',{className:'badge bgb',style:{padding:'1px 7px',fontSize:10,marginLeft:6}},'B'+res.branch),
-          res.customer_type&&h('span',{className:'badge bgx',style:{padding:'1px 7px',fontSize:10,marginLeft:6}},res.customer_type.split(' (')[0]))
+          res.customer_type&&h('span',{className:'badge bgx',style:{padding:'1px 7px',fontSize:10,marginLeft:6}},res.customer_type.split(' (')[0]),
+          (res.status!=='arrived'&&!isThisMonth(res.service_date)&&!ov)&&h('span',{className:'badge bgy',style:{padding:'1px 7px',fontSize:10,marginLeft:6}},'📆 เดือนหน้า'))
       ),
       h('div',{style:{flexShrink:0,marginLeft:8}},
         res.status==='arrived'?h('span',{className:'badge bgg'},'✓ เสร็จสิ้น'):
@@ -513,7 +524,7 @@ function Menu1({branch,reservations,loading,onSave,onArrived,onDelete,editingRes
 
 /* BRANCH PERFORMANCE CARD - read-only, synced from Cockpit */
 function BPCard({branch,data,reservations}){
-  const reserved=useMemo(()=>reservations.filter(r=>r.branch===branch&&r.status!=='arrived').reduce((s,r)=>s+r.qty+(r.qty2||0),0),[reservations,branch]);
+  const reserved=useMemo(()=>reservations.filter(r=>r.branch===branch&&r.status!=='arrived'&&isThisMonth(r.service_date)).reduce((s,r)=>s+r.qty+(r.qty2||0),0),[reservations,branch]);
   const remaining=Math.max(0,data.target-(data.actual+reserved));
   const combined=data.actual+reserved;
   const rate=data.target>0?(combined/data.target*100):0;
@@ -550,13 +561,13 @@ function Menu2({branch,branchData,reservations,isAdmin,loading,onSyncCockpit}){
   async function doSync(){setSyncing(true);await onSyncCockpit(false);setSyncing(false);}
   const allStats=useMemo(()=>{
     let tgt=0,act=0,res=0;
-    BRANCHES.forEach(b=>{const d=branchData[b]||{target:0,actual:0};const r=reservations.filter(x=>x.branch===b&&x.status!=='arrived').reduce((s,x)=>s+x.qty+(x.qty2||0),0);tgt+=d.target;act+=d.actual;res+=r;});
+    BRANCHES.forEach(b=>{const d=branchData[b]||{target:0,actual:0};const r=reservations.filter(x=>x.branch===b&&x.status!=='arrived'&&isThisMonth(x.service_date)).reduce((s,x)=>s+x.qty+(x.qty2||0),0);tgt+=d.target;act+=d.actual;res+=r;});
     const rate=tgt>0?((act+res)/tgt*100):0;
     return {tgt,act,res,gap:Math.max(0,tgt-act),rate};
   },[branchData,reservations]);
   const rankings=useMemo(()=>BRANCHES.map(b=>{
     const d=branchData[b]||{target:0,actual:0};
-    const r=reservations.filter(x=>x.branch===b&&x.status!=='arrived').reduce((s,x)=>s+x.qty+(x.qty2||0),0);
+    const r=reservations.filter(x=>x.branch===b&&x.status!=='arrived'&&isThisMonth(x.service_date)).reduce((s,x)=>s+x.qty+(x.qty2||0),0);
     const rate=d.target>0?((d.actual+r)/d.target*100):0;
     return {b,rate,actual:d.actual,target:d.target,res:r};
   }).sort((a,z)=>z.rate-a.rate),[branchData,reservations]);
@@ -866,7 +877,7 @@ function App(){
 
   const TABS=[{icon:h(SDoc,{s:20}),label:'รายการจอง'},{icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},{icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'}];
   const PAGE=[{t:'รายการจอง',s:'สาขา '+branch},{t:'ประสิทธิภาพสาขา',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch}];
-  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v3.2');
+  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v3.3');
 
   return h('div',{id:'app'},
     /* SIDEBAR */
