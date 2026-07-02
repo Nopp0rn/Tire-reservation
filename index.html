@@ -394,7 +394,7 @@ function BranchModal({cur,onSelect,onClose}){return h('div',{className:'ov',onCl
 
 /* RESERVATION FORM */
 function ResForm({branch,onSave,onClose,editing,saving}){
-  const init=editing?{...editing}:{customer_name:'',phone:'',customer_type:CUST_TYPES[0],brand:BRANDS[0],model:'',size:'',qty:4,model2:'',size2:'',qty2:'',reservation_date:todayStr(),service_date:'',status:'upcoming'};
+  const init=editing?{...editing}:{customer_name:'',phone:'',customer_type:CUST_TYPES[0],brand:BRANDS[0],model:'',size:'',qty:4,brand2:BRANDS[0],model2:'',size2:'',qty2:'',reservation_date:todayStr(),service_date:'',status:'upcoming'};
   const [f,setF]=useState(init);
   const [dual,setDual]=useState(!!(editing&&editing.size2));
   const [err,setErr]=useState('');
@@ -405,7 +405,7 @@ function ResForm({branch,onSave,onClose,editing,saving}){
     if(!f.service_date){setErr('กรุณาเลือกวันนัดเข้ารับบริการ');return;}
     if(dual&&!f.size2.trim()){setErr('กรุณากรอกขนาดยางชุดที่ 2 หรือยกเลิกการเพิ่มขนาดที่ 2');return;}
     setErr('');
-    const payload={...f, model2: dual?f.model2:null, size2: dual?f.size2:null, qty2: dual?(parseInt(f.qty2)||0):null};
+    const payload={...f, brand2: dual?(f.brand2||BRANDS[0]):null, model2: dual?f.model2:null, size2: dual?f.size2:null, qty2: dual?(parseInt(f.qty2)||0):null};
     onSave({...payload,branch,id:editing?editing.id:(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)),created_at:editing?editing.created_at:new Date().toISOString()});
   }
   const SL2=({ico,txt})=>h('div',{className:'txs sem bl upr',style:{marginBottom:8,marginTop:4}},ico+' '+txt);
@@ -435,6 +435,16 @@ function ResForm({branch,onSave,onClose,editing,saving}){
           h('div',{className:'txs sem bl upr',style:{letterSpacing:'.5px'}},'🛞 ยางชุดที่ 2'),
           h('div',{className:'fr2'},
             h('div',{className:'fg',style:{marginBottom:0}},
+              h('label',{className:'fl'},'ยี่ห้อ (ชุดที่ 2)'),
+              h('select',{className:'fsl',value:f.brand2||BRANDS[0],onChange:e=>set('brand2',e.target.value)},BRANDS.map(b=>h('option',{key:b,value:b},b)))
+            ),
+            h('div',{className:'fg',style:{marginBottom:0}},
+              h('label',{className:'fl'},'รุ่น (ชุดที่ 2) — ไม่บังคับ'),
+              h('input',{className:'fi',placeholder:'เช่น Turanza T6',value:f.model2||'',onChange:e=>set('model2',e.target.value)})
+            )
+          ),
+          h('div',{className:'fr2'},
+            h('div',{className:'fg',style:{marginBottom:0}},
               h('label',{className:'fl'},'ขนาดยาง (ชุดที่ 2) *'),
               h('input',{className:'fi',placeholder:'เช่น 225/45R18',value:f.size2||'',onChange:e=>set('size2',e.target.value)})
             ),
@@ -442,10 +452,6 @@ function ResForm({branch,onSave,onClose,editing,saving}){
               h('label',{className:'fl'},'จำนวน (ชุดที่ 2)'),
               h('select',{className:'fsl',value:f.qty2||2,onChange:e=>set('qty2',parseInt(e.target.value))},[1,2,3,4].map(n=>h('option',{key:n,value:n},n+' เส้น')))
             )
-          ),
-          h('div',{className:'fg',style:{marginBottom:0}},
-            h('label',{className:'fl'},'รุ่น (ชุดที่ 2) — ไม่บังคับ'),
-            h('input',{className:'fi',placeholder:'เช่น Turanza T6',value:f.model2||'',onChange:e=>set('model2',e.target.value)})
           )
         ),
         h('div',{className:'dv'}),
@@ -487,11 +493,14 @@ function ResCard({res,onArrived,onEdit,onDelete,showBranch}){
       )
     ),
     h('div',{className:'rc-det'},
-      h('div',null,h('div',{className:'rc-dl'},'แบรนด์ / รุ่น'),h('div',{className:'rc-dv'},res.brand+(res.model?' · '+res.model:''))),
+      h('div',null,h('div',{className:'rc-dl'},'แบรนด์ / รุ่น'),h('div',{className:'rc-dv'},
+        res.brand+(res.model?' · '+res.model:'')+
+        (res.size2&&res.brand2?'  |  '+(res.brand2)+(res.model2?' · '+res.model2:''):'')
+      )),
       h('div',null,h('div',{className:'rc-dl'},'ขนาด x เส้น'),h('div',{className:'rc-dv mono'},
           res.size+' x '+res.qty+
           (res.size2&&String(res.size2).trim()
-            ? '  •  '+String(res.size2).trim()+' x '+(res.qty2!=null?res.qty2:'?')+(res.model2&&String(res.model2).trim()?' ('+String(res.model2).trim()+')':'')
+            ? '  •  '+String(res.size2).trim()+' x '+(res.qty2!=null?res.qty2:'?')
             : '')
         )),
       h('div',null,h('div',{className:'rc-dl'},'วันที่จอง'),h('div',{className:'rc-dv'},fmtDate(res.reservation_date))),
@@ -895,7 +904,7 @@ function App(){
     setSaving(true);
     const isEdit=reservations.some(r=>r.id===data.id);
     const prevSnap=reservations;
-    const payload={id:data.id,branch:data.branch,customer_name:data.customer_name,phone:data.phone,customer_type:data.customer_type||CUST_TYPES[0],brand:data.brand,model:data.model,size:data.size,qty:data.qty,model2:data.model2||null,size2:data.size2||null,qty2:data.qty2||null,reservation_date:data.reservation_date,service_date:data.service_date,status:data.status||'upcoming'};
+    const payload={id:data.id,branch:data.branch,customer_name:data.customer_name,phone:data.phone,customer_type:data.customer_type||CUST_TYPES[0],brand:data.brand,model:data.model,size:data.size,qty:data.qty,brand2:data.brand2||null,model2:data.model2||null,size2:data.size2||null,qty2:data.qty2||null,reservation_date:data.reservation_date,service_date:data.service_date,status:data.status||'upcoming'};
     markRecentlyChanged(data.id);
     if(isEdit)setReservations(prev=>prev.map(r=>r.id===data.id?{...r,...payload}:r));
     else setReservations(prev=>[...prev,payload]);
@@ -929,7 +938,7 @@ function App(){
 
   const TABS=[{icon:h(SDoc,{s:20}),label:'รายการจอง'},{icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},{icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'}];
   const PAGE=[{t:'รายการจอง',s:'สาขา '+branch},{t:'ประสิทธิภาพสาขา',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch}];
-  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v3.9');
+  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v4.0');
 
   return h('div',{id:'app'},
     /* SIDEBAR */
