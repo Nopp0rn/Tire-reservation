@@ -779,15 +779,19 @@ function App(){
       if(deRes.error||!deRes.data){if(!silent)toast('ดึงยอดขายรายวันไม่ได้','error');return;}
       if(tgtRes.error||!tgtRes.data){if(!silent)toast('ดึงเป้าหมายไม่ได้','error');return;}
       const todayDay=parseInt(cfgRes.data.value.todayDay)||1;
+      const year=parseInt(cfgRes.data.value.year);
+      const month=parseInt(cfgRes.data.value.month);
+      const monthKey=`${year}-${month}`; // e.g. "2026-7" (no zero-padding, matches Cockpit)
       const daily=deRes.data.value;
       const targets=tgtRes.data.value;
-      // คำนวณยอดขายสะสม
+      // คำนวณยอดขายสะสม — โครงสร้าง: daily[branch][monthKey][day] → { tire, ... }
       const actualMap={};
       Object.keys(daily).forEach(branch=>{
+        const monthData = daily[branch]?.[monthKey] || {};
         let total=0;
         for(let d=1;d<=todayDay;d++){
-          const day=daily[branch][String(d)];
-          if(day)total+=Math.max(0,parseInt(day.tire)||0);
+          const day=monthData[String(d)];
+          if(day) total+=Math.max(0,parseInt(day.tire)||0);
         }
         actualMap[branch]=total;
       });
@@ -910,7 +914,7 @@ function App(){
 
   const TABS=[{icon:h(SDoc,{s:20}),label:'รายการจอง'},{icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},{icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'}];
   const PAGE=[{t:'รายการจอง',s:'สาขา '+branch},{t:'ประสิทธิภาพสาขา',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch}];
-  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v3.6');
+  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v3.7');
 
   return h('div',{id:'app'},
     /* SIDEBAR */
