@@ -490,8 +490,8 @@ function ResCard({res,onArrived,onEdit,onDelete,showBranch}){
       h('div',null,h('div',{className:'rc-dl'},'แบรนด์ / รุ่น'),h('div',{className:'rc-dv'},res.brand+(res.model?' · '+res.model:''))),
       h('div',null,h('div',{className:'rc-dl'},'ขนาด x เส้น'),h('div',{className:'rc-dv mono'},
           res.size+' x '+res.qty+
-          (res.size2&&res.size2.trim()
-            ? '  •  '+res.size2.trim()+' x '+(res.qty2||'?')+(res.model2&&res.model2.trim()?' ('+res.model2.trim()+')':'')
+          (res.size2&&String(res.size2).trim()
+            ? '  •  '+String(res.size2).trim()+' x '+(res.qty2!=null?res.qty2:'?')+(res.model2&&String(res.model2).trim()?' ('+String(res.model2).trim()+')':'')
             : '')
         )),
       h('div',null,h('div',{className:'rc-dl'},'วันที่จอง'),h('div',{className:'rc-dv'},fmtDate(res.reservation_date))),
@@ -929,7 +929,7 @@ function App(){
 
   const TABS=[{icon:h(SDoc,{s:20}),label:'รายการจอง'},{icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},{icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'}];
   const PAGE=[{t:'รายการจอง',s:'สาขา '+branch},{t:'ประสิทธิภาพสาขา',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch}];
-  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v3.8');
+  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v3.9');
 
   return h('div',{id:'app'},
     /* SIDEBAR */
