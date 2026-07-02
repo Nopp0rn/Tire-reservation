@@ -381,6 +381,7 @@ const SEdt=({s=12})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',s
 const STrs=({s=12})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'3 6 5 6 21 6'}),h('path',{d:'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'}));
 const SPh=({s=11})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('path',{d:'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.44 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z'}));
 const STrp=({s=14})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'8 21 12 21 16 21'}),h('line',{x1:12,y1:17,x2:12,y2:21}),h('path',{d:'M7 4h10l1 5a5 5 0 0 1-12 0z'}),h('path',{d:'M5 4H3a2 2 0 0 0-2 2v2a5 5 0 0 0 5 5'}),h('path',{d:'M19 4h2a2 2 0 0 1 2 2v2a5 5 0 0 1-5 5'}));
+const SCht=({s=20})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('line',{x1:18,y1:20,x2:18,y2:10}),h('line',{x1:12,y1:20,x2:12,y2:4}),h('line',{x1:6,y1:20,x2:6,y2:14}),h('line',{x1:2,y1:20,x2:22,y2:20}));
 const SRef=({s=13})=>h('svg',{width:s,height:s,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},h('polyline',{points:'23 4 23 10 17 10'}),h('path',{d:'M20.49 15a9 9 0 1 1-2.12-9.36L23 10'}));
 
 /* TOAST */
@@ -702,6 +703,127 @@ function Menu3({branch,reservations,onArrived,onEdit,onDelete,isAdmin,loading}){
   );
 }
 
+/* ── MENU 4 - CUSTOMER TYPE ANALYSIS ── */
+function Menu4({branch,reservations,isAdmin,loading}){
+  const [period,setPeriod]=useState('month'); // month | all
+  const today=new Date();
+  const curYear=today.getFullYear();
+  const curMonth=today.getMonth();
+
+  const base=useMemo(()=>{
+    let l=reservations;
+    if(!isAdmin) l=l.filter(r=>r.branch===branch);
+    if(period==='month') l=l.filter(r=>isThisMonth(r.service_date));
+    return l;
+  },[reservations,branch,isAdmin,period]);
+
+  // Aggregate by customer_type
+  const stats=useMemo(()=>{
+    const map={};
+    base.forEach(r=>{
+      const t=r.customer_type||'ทั่วไป (เงินสด,SME)';
+      if(!map[t]) map[t]={type:t,count:0,tires:0,arrived:0,upcoming:0,overdue:0};
+      const tires=(r.qty||0)+(r.qty2||0);
+      map[t].count++;
+      map[t].tires+=tires;
+      if(r.status==='arrived') map[t].arrived++;
+      else if(isOv(r)) map[t].overdue++;
+      else map[t].upcoming++;
+    });
+    return Object.values(map).sort((a,b)=>b.tires-a.tires);
+  },[base]);
+
+  const totalTires=stats.reduce((s,x)=>s+x.tires,0);
+  const totalCount=stats.reduce((s,x)=>s+x.count,0);
+
+  // Short label for display
+  function shortType(t){
+    if(t.includes('Fleet')) return 'Fleet';
+    if(t.includes('Online')) return 'Online';
+    if(t.includes('สวัสดิการ')) return 'สวัสดิการ';
+    return 'ทั่วไป';
+  }
+
+  // Color per type
+  function typeColor(t){
+    if(t.includes('Fleet')) return 'var(--ac)';
+    if(t.includes('Online')) return 'var(--yw)';
+    if(t.includes('สวัสดิการ')) return 'var(--gn)';
+    return 'var(--t2)';
+  }
+
+  return h('div',null,
+    h('div',{className:'sh'},
+      h('div',null,
+        h('div',{className:'st'},'วิเคราะห์การจองตามประเภทลูกค้า'),
+        h('div',{className:'ss'},(isAdmin?'ทุกสาขา':'สาขา '+branch)+' · '+totalCount+' รายการ · '+totalTires+' เส้น')
+      ),
+      h('div',{className:'fchips',style:{margin:0}},
+        [['month','เดือนนี้'],['all','ทั้งหมด']].map(([v,l])=>
+          h('button',{key:v,className:'fc'+(period===v?' on':''),onClick:()=>setPeriod(v)},l)
+        )
+      )
+    ),
+    loading?h('div',{className:'emp'},h('div',{className:'spin'})):
+    stats.length===0?h('div',{className:'emp'},
+      h('div',{className:'emp-ico'},'📊'),
+      h('div',{className:'emp-t'},'ยังไม่มีข้อมูลการจอง'),
+      h('div',{className:'emp-s'},period==='month'?'ยังไม่มีการจองในเดือนนี้':'ยังไม่มีการจองในระบบ')
+    ):h('div',null,
+      // Summary cards
+      h('div',{className:'g2c',style:{gridTemplateColumns:'1fr 1fr',marginBottom:16}},
+        h('div',{className:'sc tc'},h('div',{className:'sc-v mono bl'},totalTires),h('div',{className:'sc-l'},'ยางจองทั้งหมด (เส้น)')),
+        h('div',{className:'sc tc'},h('div',{className:'sc-v mono'},totalCount),h('div',{className:'sc-l'},'รายการจองทั้งหมด'))
+      ),
+      // Per-type breakdown
+      h('div',null,stats.map(s=>{
+        const pct=totalTires>0?Math.round(s.tires/totalTires*100):0;
+        const col=typeColor(s.type);
+        return h('div',{key:s.type,className:'card',style:{marginBottom:10}},
+          // Header
+          h('div',{className:'fxb mb3'},
+            h('div',{className:'fxa g2'},
+              h('div',{style:{width:10,height:10,borderRadius:'50%',background:col,flexShrink:0}}),
+              h('div',{className:'bld',style:{fontSize:15}},s.type)
+            ),
+            h('span',{className:'badge',style:{background:'rgba(255,255,255,.06)',color:col,fontSize:12}},pct+'%')
+          ),
+          // Progress bar
+          h('div',{className:'pb pb-lg mb3'},
+            h('div',{style:{height:'100%',width:pct+'%',background:col,borderRadius:4,transition:'width .6s ease'}})
+          ),
+          // Stats grid
+          h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}},
+            [
+              ['ยางจอง',s.tires+' เส้น',col],
+              ['รายการ',s.count+' ใบ',''],
+              ['เสร็จสิ้น',s.arrived,'var(--gn)'],
+              ['รอบริการ',s.upcoming,'var(--ac)'],
+            ].map(([l,v,c2],i)=>
+              h('div',{key:i,className:'sc tc'},
+                h('div',{className:'sc-v mono',style:{fontSize:16,color:c2||'var(--tx)'}},v),
+                h('div',{className:'sc-l'},l)
+              )
+            )
+          )
+        );
+      })),
+      // Ranking summary
+      h('div',{className:'card'},
+        h('div',{className:'fxa g2 mb3'},h('span',{style:{fontSize:16}},'🏆'),h('span',{className:'bld'},'อันดับตามจำนวนเส้นยาง')),
+        stats.map((s,i)=>h('div',{key:s.type,className:'rr'},
+          h('span',{style:{fontFamily:'var(--mono)',fontSize:12,color:'var(--t3)',width:24,flexShrink:0}},i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)),
+          h('div',{style:{flex:1,minWidth:0,paddingLeft:8}},
+            h('div',{className:'bld trunc'},shortType(s.type)),
+            h('div',{className:'txs mu'},s.count+' รายการ')
+          ),
+          h('div',{className:'mono bld',style:{color:typeColor(s.type),flexShrink:0}},s.tires+' เส้น')
+        ))
+      )
+    )
+  );
+}
+
 /* ROOT APP */
 function App(){
   const [branch,setBranch]=useState(()=>{try{return localStorage.getItem('tt_branch')||'003';}catch{return'003';}});
@@ -938,9 +1060,9 @@ function App(){
 
   const overdueCount=useMemo(()=>reservations.filter(r=>(isAdmin||r.branch===branch)&&isOv(r)).length,[reservations,branch,isAdmin]);
 
-  const TABS=[{icon:h(SDoc,{s:20}),label:'รายการจอง'},{icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},{icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'}];
-  const PAGE=[{t:'รายการจอง',s:'สาขา '+branch},{t:'ประสิทธิภาพสาขา',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch}];
-  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v4.2');
+  const TABS=[{icon:h(SDoc,{s:20}),label:'รายการจอง'},{icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},{icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'},{icon:h(SCht,{s:20}),label:'วิเคราะห์'}];
+  const PAGE=[{t:'รายการจอง',s:'สาขา '+branch},{t:'ประสิทธิภาพสาขา',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'วิเคราะห์การจอง',s:isAdmin?'ทุกสาขา':'สาขา '+branch}];
+  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v4.3');
 
   return h('div',{id:'app'},
     /* SIDEBAR */
@@ -998,7 +1120,8 @@ function App(){
       h('div',{className:'page'},
         tab===0&&h(Menu1,{branch,reservations,loading:loadR,onSave:handleSave,onArrived:handleArrived,onDelete:handleDelete,editingRes,setEditingRes,saving,showForm,setShowForm}),
         tab===1&&h(Menu2,{branch,branchData,reservations,isAdmin,loading:loadB,onSyncCockpit:syncFromCockpit}),
-        tab===2&&h(Menu3,{branch,reservations,onArrived:handleArrived,onEdit:handleEditFromSchedule,onDelete:handleDelete,isAdmin,loading:loadR})
+        tab===2&&h(Menu3,{branch,reservations,onArrived:handleArrived,onEdit:handleEditFromSchedule,onDelete:handleDelete,isAdmin,loading:loadR}),
+        tab===3&&h(Menu4,{branch,reservations,isAdmin,loading:loadR})
       ),
       /* BOTTOM NAV */
       h('div',{className:'bnav'},
@@ -1029,7 +1152,7 @@ catch(e){document.getElementById('app').innerHTML='<div style="padding:40px;text
 if('serviceWorker' in navigator){
   // Inline SW as a Blob URL so no separate sw.js file is needed
   const swCode = `
-const CACHE = 'tiretrack-v4.2';
+const CACHE = 'tiretrack-v4.3';
 const URLS  = [self.location.href.replace(/\\/sw-inline.js.*$/, '') || '/'];
 
 self.addEventListener('install', e => {
