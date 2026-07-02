@@ -431,11 +431,21 @@ function ResForm({branch,onSave,onClose,editing,saving}){
           h('input',{type:'checkbox',checked:dual,onChange:e=>setDual(e.target.checked),style:{width:17,height:17,accentColor:'var(--ac)',cursor:'pointer'}}),
           h('span',{className:'tsm',style:{color:'var(--t2)'}},'🛞 รถคันนี้ใช้ยาง 2 ขนาด (หน้า/หลังต่างกัน)')
         ),
-        dual&&h('div',{style:{marginBottom:14,background:'var(--s2)',padding:12,borderRadius:'var(--rs)',border:'1px solid var(--bd)'}},
-          h('div',{className:'fg'},h('label',{className:'fl'},'รุ่น (ชุดที่ 2)'),h('input',{className:'fi',placeholder:'เช่น Ecopia EP150',value:f.model2||'',onChange:e=>set('model2',e.target.value)})),
-          h('div',{className:'fr2',style:{marginBottom:0}},
-            h('div',{className:'fg',style:{marginBottom:0}},h('label',{className:'fl'},'ขนาดยาง (ชุดที่ 2)'),h('input',{className:'fi',placeholder:'เช่น 225/45R18',value:f.size2||'',onChange:e=>set('size2',e.target.value)})),
-            h('div',{className:'fg',style:{marginBottom:0}},h('label',{className:'fl'},'จำนวน (ชุดที่ 2)'),h('select',{className:'fsl',value:f.qty2||2,onChange:e=>set('qty2',parseInt(e.target.value))},[1,2,3,4].map(n=>h('option',{key:n,value:n},n+' เส้น'))))
+        dual&&h('div',{style:{marginBottom:14,background:'var(--s2)',padding:12,borderRadius:'var(--rs)',border:'1.5px solid var(--ac)',gap:10,display:'flex',flexDirection:'column'}},
+          h('div',{className:'txs sem bl upr',style:{letterSpacing:'.5px'}},'🛞 ยางชุดที่ 2'),
+          h('div',{className:'fr2'},
+            h('div',{className:'fg',style:{marginBottom:0}},
+              h('label',{className:'fl'},'ขนาดยาง (ชุดที่ 2) *'),
+              h('input',{className:'fi',placeholder:'เช่น 225/45R18',value:f.size2||'',onChange:e=>set('size2',e.target.value)})
+            ),
+            h('div',{className:'fg',style:{marginBottom:0}},
+              h('label',{className:'fl'},'จำนวน (ชุดที่ 2)'),
+              h('select',{className:'fsl',value:f.qty2||2,onChange:e=>set('qty2',parseInt(e.target.value))},[1,2,3,4].map(n=>h('option',{key:n,value:n},n+' เส้น')))
+            )
+          ),
+          h('div',{className:'fg',style:{marginBottom:0}},
+            h('label',{className:'fl'},'รุ่น (ชุดที่ 2) — ไม่บังคับ'),
+            h('input',{className:'fi',placeholder:'เช่น Turanza T6',value:f.model2||'',onChange:e=>set('model2',e.target.value)})
           )
         ),
         h('div',{className:'dv'}),
@@ -478,7 +488,12 @@ function ResCard({res,onArrived,onEdit,onDelete,showBranch}){
     ),
     h('div',{className:'rc-det'},
       h('div',null,h('div',{className:'rc-dl'},'แบรนด์ / รุ่น'),h('div',{className:'rc-dv'},res.brand+(res.model?' · '+res.model:''))),
-      h('div',null,h('div',{className:'rc-dl'},'ขนาด x เส้น'),h('div',{className:'rc-dv mono'},res.size+' x '+res.qty+(res.size2?'  •  '+res.size2+' x '+res.qty2+(res.model2?' ('+res.model2+')':''):''))),
+      h('div',null,h('div',{className:'rc-dl'},'ขนาด x เส้น'),h('div',{className:'rc-dv mono'},
+          res.size+' x '+res.qty+
+          (res.size2&&res.size2.trim()
+            ? '  •  '+res.size2.trim()+' x '+(res.qty2||'?')+(res.model2&&res.model2.trim()?' ('+res.model2.trim()+')':'')
+            : '')
+        )),
       h('div',null,h('div',{className:'rc-dl'},'วันที่จอง'),h('div',{className:'rc-dv'},fmtDate(res.reservation_date))),
       h('div',null,h('div',{className:'rc-dl'},'วันนัดบริการ'),h('div',{className:'rc-dv'+(ov?' rd':'')},fmtDate(res.service_date)))
     ),
@@ -914,7 +929,7 @@ function App(){
 
   const TABS=[{icon:h(SDoc,{s:20}),label:'รายการจอง'},{icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},{icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'}];
   const PAGE=[{t:'รายการจอง',s:'สาขา '+branch},{t:'ประสิทธิภาพสาขา',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch}];
-  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v3.7');
+  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v3.8');
 
   return h('div',{id:'app'},
     /* SIDEBAR */
