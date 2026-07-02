@@ -1018,5 +1018,97 @@ try{ReactDOM.createRoot(document.getElementById('app')).render(h(App));}
 catch(e){document.getElementById('app').innerHTML='<div style="padding:40px;text-align:center;color:#edf0f8;font-family:sans-serif"><div style="font-size:40px;margin-bottom:16px">⚠️</div><div style="font-size:18px;font-weight:700;margin-bottom:8px">เกิดข้อผิดพลาด</div><div style="font-size:14px;color:#8e97b4">'+(e.message||'')+'</div></div>';}
 })();
 </script>
+
+<script>
+/* ── Service Worker Registration ──
+   Strategy: Network First with instant refresh on new version.
+   - Every time the app opens, SW fetches latest HTML from server.
+   - If server has a newer version (different cache key), page reloads automatically.
+   - If offline, falls back to cached version so app still works.
+*/
+if('serviceWorker' in navigator){
+  // Inline SW as a Blob URL so no separate sw.js file is needed
+  const swCode = `
+const CACHE = 'tiretrack-v4.2';
+const URLS  = [self.location.href.replace(/\\/sw-inline.js.*$/, '') || '/'];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(URLS))
+    .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  // Only handle same-origin navigation requests (the HTML page itself)
+  if(e.request.mode === 'navigate'){
+    e.respondWith(
+      fetch(e.request).then(networkResp => {
+        // Got fresh response from network — update cache
+        const clone = networkResp.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return networkResp;
+      }).catch(() => {
+        // Offline — serve from cache
+        return caches.match(e.request).then(r => r || Response.error());
+      })
+    );
+    return;
+  }
+  // For all other requests (CDN scripts, fonts): stale-while-revalidate
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      const fresh = fetch(e.request).then(resp => {
+        caches.open(CACHE).then(c => c.put(e.request, resp.clone()));
+        return resp;
+      });
+      return cached || fresh;
+    })
+  );
+});
+
+// Listen for "skipWaiting" message from client
+self.addEventListener('message', e => {
+  if(e.data === 'skipWaiting') self.skipWaiting();
+});
+`;
+
+  const blob = new Blob([swCode], {type:'text/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+
+  navigator.serviceWorker.register(swUrl, {scope:'./'}).then(reg => {
+    // Check for updates every time page loads
+    reg.update();
+
+    // When a new SW is waiting, refresh all clients automatically
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      newSW.addEventListener('statechange', () => {
+        if(newSW.state === 'installed' && navigator.serviceWorker.controller){
+          // New version available — tell SW to skip waiting then reload
+          newSW.postMessage('skipWaiting');
+        }
+      });
+    });
+  });
+
+  // Reload page when new SW takes control
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(!refreshing){
+      refreshing = true;
+      window.location.reload();
+    }
+  });
+}
+</script>
 </body>
 </html>
