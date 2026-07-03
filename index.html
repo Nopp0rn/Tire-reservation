@@ -722,13 +722,17 @@ function Menu4({branch,reservations,isAdmin,loading}){
     const map={};
     base.forEach(r=>{
       const t=r.customer_type||'ทั่วไป (เงินสด,SME)';
-      if(!map[t]) map[t]={type:t,count:0,tires:0,arrived:0,upcoming:0,overdue:0};
+      if(!map[t]) map[t]={type:t,count:0,tires:0,arrivedTires:0,arrived:0,upcoming:0,overdue:0};
       const tires=(r.qty||0)+(r.qty2||0);
       map[t].count++;
-      map[t].tires+=tires;
-      if(r.status==='arrived') map[t].arrived++;
-      else if(isOv(r)) map[t].overdue++;
-      else map[t].upcoming++;
+      if(r.status==='arrived'){
+        map[t].arrived++;
+        map[t].arrivedTires+=tires; // นับแยกไว้แสดง
+      } else {
+        map[t].tires+=tires; // "ยางจอง" = เฉพาะที่ยังรอบริการ
+        if(isOv(r)) map[t].overdue++;
+        else map[t].upcoming++;
+      }
     });
     return Object.values(map).sort((a,b)=>b.tires-a.tires);
   },[base]);
@@ -756,7 +760,7 @@ function Menu4({branch,reservations,isAdmin,loading}){
     h('div',{className:'sh'},
       h('div',null,
         h('div',{className:'st'},'วิเคราะห์การจองตามประเภทลูกค้า'),
-        h('div',{className:'ss'},(isAdmin?'ทุกสาขา':'สาขา '+branch)+' · '+totalCount+' รายการ · '+totalTires+' เส้น')
+        h('div',{className:'ss'},(isAdmin?'ทุกสาขา':'สาขา '+branch)+' · '+totalCount+' รายการ · รอบริการ '+totalTires+' เส้น')
       ),
       h('div',{className:'fchips',style:{margin:0}},
         [['month','เดือนนี้'],['all','ทั้งหมด']].map(([v,l])=>
@@ -772,7 +776,7 @@ function Menu4({branch,reservations,isAdmin,loading}){
     ):h('div',null,
       // Summary cards
       h('div',{className:'g2c',style:{gridTemplateColumns:'1fr 1fr',marginBottom:16}},
-        h('div',{className:'sc tc'},h('div',{className:'sc-v mono bl'},totalTires),h('div',{className:'sc-l'},'ยางจองทั้งหมด (เส้น)')),
+        h('div',{className:'sc tc'},h('div',{className:'sc-v mono bl'},totalTires),h('div',{className:'sc-l'},'ยางรอบริการ (เส้น)')),
         h('div',{className:'sc tc'},h('div',{className:'sc-v mono'},totalCount),h('div',{className:'sc-l'},'รายการจองทั้งหมด'))
       ),
       // Per-type breakdown
@@ -795,10 +799,10 @@ function Menu4({branch,reservations,isAdmin,loading}){
           // Stats grid
           h('div',{style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}},
             [
-              ['ยางจอง',s.tires+' เส้น',col],
-              ['รายการ',s.count+' ใบ',''],
-              ['เสร็จสิ้น',s.arrived,'var(--gn)'],
-              ['รอบริการ',s.upcoming,'var(--ac)'],
+              ['ยางรอบริการ',s.tires+' เส้น',col],
+              ['รับบริการแล้ว',s.arrivedTires+' เส้น','var(--gn)'],
+              ['รอรับบริการ',s.upcoming,'var(--ac)'],
+              ['เกินกำหนด',s.overdue,'var(--rd)'],
             ].map(([l,v,c2],i)=>
               h('div',{key:i,className:'sc tc'},
                 h('div',{className:'sc-v mono',style:{fontSize:16,color:c2||'var(--tx)'}},v),
@@ -1062,7 +1066,7 @@ function App(){
 
   const TABS=[{icon:h(SDoc,{s:20}),label:'รายการจอง'},{icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},{icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'},{icon:h(SCht,{s:20}),label:'วิเคราะห์'}];
   const PAGE=[{t:'รายการจอง',s:'สาขา '+branch},{t:'ประสิทธิภาพสาขา',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'วิเคราะห์การจอง',s:isAdmin?'ทุกสาขา':'สาขา '+branch}];
-  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v4.3');
+  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v4.4');
 
   return h('div',{id:'app'},
     /* SIDEBAR */
@@ -1152,7 +1156,7 @@ catch(e){document.getElementById('app').innerHTML='<div style="padding:40px;text
 if('serviceWorker' in navigator){
   // Inline SW as a Blob URL so no separate sw.js file is needed
   const swCode = `
-const CACHE = 'tiretrack-v4.3';
+const CACHE = 'tiretrack-v4.4';
 const URLS  = [self.location.href.replace(/\\/sw-inline.js.*$/, '') || '/'];
 
 self.addEventListener('install', e => {
