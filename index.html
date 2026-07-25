@@ -344,7 +344,7 @@ try{
 /* CONSTANTS */
 const BRANCHES=['003','009','010','012','014','048','050','096','107','143'];
 // เพิ่มทุกครั้งที่ deploy โค้ดใหม่ — ใช้เช็คว่าแท็บที่เปิดค้างไว้รันโค้ดเก่าอยู่หรือไม่ (ดู checkVersion ใน App())
-const APP_VERSION = 'v4.5-20260725';
+const APP_VERSION = 'v4.6-20260725';
 const BRANDS=['Bridgestone','Firestone','Dayton','Michelin','Continental','Goodyear','Dunlop','Pirelli','Yokohama','Hankook','Toyo','Maxxis','อื่นๆ (Other)'];
 const CUST_TYPES=['ทั่วไป (เงินสด,SME)','Fleet','Online (FB,Lazada,Shopee,Tiktok,LineOA)','สวัสดิการพนักงาน'];
 
@@ -849,7 +849,10 @@ function App(){
   useEffect(()=>{
     const checkVersion=async()=>{
       try{
-        const res=await fetch(location.href,{cache:'no-store'});
+        // cache:'no-store' กัน cache ของ "เบราว์เซอร์" เท่านั้น — GitHub Pages มี CDN (Fastly) คั่นอยู่หน้าอีกชั้น
+        // ซึ่งไม่สนใจ cache directive จาก client เลย ต้องแปะ query string เปลี่ยนทุกครั้งเพื่อบังคับให้ CDN เห็นเป็น URL ใหม่ (cache miss จริง)
+        const bustUrl=location.href.split('?')[0]+'?_cb='+Date.now();
+        const res=await fetch(bustUrl,{cache:'no-store'});
         const text=await res.text();
         const m=text.match(/const APP_VERSION\s*=\s*'([^']+)'/);
         if(m&&m[1]!==APP_VERSION){
@@ -1091,7 +1094,7 @@ function App(){
 
   const TABS=[{icon:h(SDoc,{s:20}),label:'รายการจอง'},{icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},{icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'},{icon:h(SCht,{s:20}),label:'วิเคราะห์'}];
   const PAGE=[{t:'รายการจอง',s:'สาขา '+branch},{t:'ประสิทธิภาพสาขา',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'วิเคราะห์การจอง',s:isAdmin?'ทุกสาขา':'สาขา '+branch}];
-  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v4.5');
+  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v4.6');
 
   return h('div',{id:'app'},
     /* SIDEBAR */
@@ -1181,7 +1184,7 @@ catch(e){document.getElementById('app').innerHTML='<div style="padding:40px;text
 if('serviceWorker' in navigator){
   // Inline SW as a Blob URL so no separate sw.js file is needed
   const swCode = `
-const CACHE = 'tiretrack-v4.5';
+const CACHE = 'tiretrack-v4.6';
 const URLS  = [self.location.href.replace(/\\/sw-inline.js.*$/, '') || '/'];
 
 self.addEventListener('install', e => {
