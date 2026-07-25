@@ -951,14 +951,21 @@ function App(){
         const t=parseInt(targets[branch].tire)||0;
         if(t>0)targetMap[branch]=t;
       });
-      // เขียนลง DB
+      // เขียนลง DB — เดิมวน await ทีละสาขา (10 round-trip แยกกัน) แต่ละครั้งมี realtime echo กลับมาทันที
+      // ทำให้ตัวเลขรวม/อันดับที่หน้าจอ "วิ่ง" ขยับทีละสาขาให้เห็นทุกครั้งที่ sync (ทุก 30 วิ)
+      // แก้โดยเขียนทีเดียวทั้งหมดเป็น bulk upsert (1 round-trip, 1 ชุด realtime แทบพร้อมกัน) → ตัวเลขเด้งไปค่าสุดท้ายเลย ไม่ไล่ทีละสาขา
       if(sb){
         const allB=new Set([...Object.keys(actualMap),...Object.keys(targetMap)]);
-        for(const b of allB){
-          const p={};
-          if(actualMap[b]!==undefined)p.actual=actualMap[b];
-          if(targetMap[b]!==undefined)p.target=targetMap[b];
-          if(Object.keys(p).length>0)await sb.from('tt_branch_data').update(p).eq('branch',b);
+        const rows=[];
+        allB.forEach(b=>{
+          const row={branch:b};
+          if(actualMap[b]!==undefined)row.actual=actualMap[b];
+          if(targetMap[b]!==undefined)row.target=targetMap[b];
+          if(Object.keys(row).length>1)rows.push(row);
+        });
+        if(rows.length>0){
+          const {error}=await sb.from('tt_branch_data').upsert(rows,{onConflict:'branch'});
+          if(error)console.error('[syncFromCockpit] bulk upsert failed:',error.message);
         }
       }
       // อัปเดต local state
