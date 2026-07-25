@@ -922,30 +922,28 @@ function App(){
   async function syncFromCockpit(silent=false){
     if(!cp){if(!silent)toast('ไม่ได้เชื่อมต่อ Cockpit Intelligence','error');return;}
     try{
-      const [cfgRes,deRes,tgtRes]=await Promise.all([
+      // 2026-07-25: Cockpit ย้ายยอดกรอกรายวันจากก้อน cp_de (app_data) → ตาราง daily_entries
+      // (คนละแถวต่อสาขา+เดือน+วัน กันหลายสาขาเขียนทับกัน) จึงต้องอ่านจากตารางใหม่แทน cp_de ที่ค้าง/ไม่อัปเดตแล้ว
+      const [cfgRes,tgtRes,entRes]=await Promise.all([
         cp.from('app_data').select('value').eq('key','cp_cfg').single(),
-        cp.from('app_data').select('value').eq('key','cp_de').single(),
         cp.from('app_data').select('value').eq('key','cp_tgt').single(),
+        cp.from('daily_entries').select('branch_id,ym,day,data'),
       ]);
       if(cfgRes.error||!cfgRes.data){if(!silent)toast('ดึงข้อมูล Cockpit ไม่ได้','error');return;}
-      if(deRes.error||!deRes.data){if(!silent)toast('ดึงยอดขายรายวันไม่ได้','error');return;}
       if(tgtRes.error||!tgtRes.data){if(!silent)toast('ดึงเป้าหมายไม่ได้','error');return;}
+      if(entRes.error){if(!silent)toast('ดึงยอดขายรายวันไม่ได้','error');return;}
       const todayDay=parseInt(cfgRes.data.value.todayDay)||1;
       const year=parseInt(cfgRes.data.value.year);
       const month=parseInt(cfgRes.data.value.month);
       const monthKey=`${year}-${month}`; // e.g. "2026-7" (no zero-padding, matches Cockpit)
-      const daily=deRes.data.value;
       const targets=tgtRes.data.value;
-      // คำนวณยอดขายสะสม — โครงสร้าง: daily[branch][monthKey][day] → { tire, ... }
+      // คำนวณยอดขายสะสม — filter เฉพาะเดือนปัจจุบัน (ym===monthKey) + วันที่ ≤ todayDay จาก daily_entries
       const actualMap={};
-      Object.keys(daily).forEach(branch=>{
-        const monthData = daily[branch]?.[monthKey] || {};
-        let total=0;
-        for(let d=1;d<=todayDay;d++){
-          const day=monthData[String(d)];
-          if(day) total+=Math.max(0,parseInt(day.tire)||0);
-        }
-        actualMap[branch]=total;
+      (entRes.data||[]).forEach(row=>{
+        if(row.branch_id==null||row.day==null)return;
+        if(row.ym!==monthKey)return;      // ข้ามแถวเดือนอื่น (daily_entries เก็บทุกเดือนไว้ในตารางเดียว)
+        if(row.day>todayDay)return;
+        actualMap[row.branch_id]=(actualMap[row.branch_id]||0)+Math.max(0,parseInt(row.data?.tire)||0);
       });
       // ดึงเป้าหมาย
       const targetMap={};
