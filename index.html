@@ -344,7 +344,7 @@ try{
 /* CONSTANTS */
 const BRANCHES=['003','009','010','012','014','048','050','096','107','143'];
 // เพิ่มทุกครั้งที่ deploy โค้ดใหม่ — ใช้เช็คว่าแท็บที่เปิดค้างไว้รันโค้ดเก่าอยู่หรือไม่ (ดู checkVersion ใน App())
-const APP_VERSION = 'v4.7-20260726';
+const APP_VERSION = 'v4.8-20260726';
 const BRANDS=['Bridgestone','Firestone','Dayton','Michelin','Continental','Goodyear','Dunlop','Pirelli','Yokohama','Hankook','Toyo','Maxxis','อื่นๆ (Other)'];
 const CUST_TYPES=['ทั่วไป (เงินสด,SME)','Fleet','Online (FB,Lazada,Shopee,Tiktok,LineOA)','สวัสดิการพนักงาน'];
 
@@ -1077,19 +1077,28 @@ function App(){
     // เดิม poll ทุก 30 วิ และยิงแม้ตอนแอปถูกพับไว้เบื้องหลัง → กินโควตา Supabase มหาศาล
     // ตอนนี้มี Realtime subscribe อยู่แล้ว (chR/chB) ข้อมูลสดมาทาง realtime ทันที poll เป็นแค่ตัวสำรองกันหลุด
     // จึงยืดเป็น 3 นาที + ข้ามรอบเมื่อแอปไม่ได้อยู่หน้าจอ และ sync Cockpit ให้ถี่น้อยกว่า (ทุก 3 รอบ ≈ 9 นาที)
-    let tick=0;
+    // เครื่องที่สาขาเปิดแอปค้างทั้งวันโดยไม่มีคนแตะ = ยังนับเป็น visible จึง poll ทั้งวันกินโควตาฟรีๆ
+    // จึงหยุด poll เมื่อไม่มีการใช้งาน 30 นาที — ข้อมูลสดยังมาทาง Realtime ตามปกติ
+    // แตะจอ/พิมพ์/เลื่อนเมื่อไร กลับมา poll ทันทีพร้อมดึงสดรอบนึง
+    const IDLE_MS=30*60*1000;
+    let lastAct=Date.now(), tick=0;
     pollTimer=setInterval(()=>{
       if(document.hidden)return;              // แอปถูกพับ/สลับแท็บอยู่ — ไม่ต้องดึงอะไรเลย
+      if(Date.now()-lastAct>IDLE_MS)return;   // เปิดค้างไว้เฉยๆ ไม่มีคนใช้ — พัก
       if(document.querySelector('.sheet'))return;
       tick++;
       loadRes(true,true);loadBD(true);   // incremental — ดึงเฉพาะรายการจองที่เปลี่ยน
       if(tick%3===0)syncFromCockpit(true);    // ยอดขายจาก Cockpit เปลี่ยนช้า ไม่ต้องดึงทุกรอบ
     },180000);
+    const refreshNow=()=>{loadRes(true);loadBD(true);syncFromCockpit(true);};
     // กลับมาที่หน้าจอเมื่อไร ดึงสดทันทีรอบนึง จะได้ไม่ต้องรอครบ 3 นาที
-    const onVis=()=>{if(!document.hidden){loadRes(true);loadBD(true);syncFromCockpit(true);}};
+    const onVis=()=>{if(!document.hidden){lastAct=Date.now();refreshNow();}};
+    const onAct=()=>{const wasIdle=Date.now()-lastAct>IDLE_MS;lastAct=Date.now();if(wasIdle&&!document.hidden)refreshNow();};
     document.addEventListener('visibilitychange',onVis);
+    ['pointerdown','keydown','wheel','touchstart'].forEach(ev=>window.addEventListener(ev,onAct,{passive:true}));
     return()=>{
       document.removeEventListener('visibilitychange',onVis);
+      ['pointerdown','keydown','wheel','touchstart'].forEach(ev=>window.removeEventListener(ev,onAct));
       try{if(chR)sb.removeChannel(chR);if(chB)sb.removeChannel(chB);}catch(e){}
       if(pollTimer)clearInterval(pollTimer);
     };
@@ -1134,7 +1143,7 @@ function App(){
 
   const TABS=[{icon:h(SDoc,{s:20}),label:'รายการจอง'},{icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},{icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'},{icon:h(SCht,{s:20}),label:'วิเคราะห์'}];
   const PAGE=[{t:'รายการจอง',s:'สาขา '+branch},{t:'ประสิทธิภาพสาขา',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'วิเคราะห์การจอง',s:isAdmin?'ทุกสาขา':'สาขา '+branch}];
-  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v4.7');
+  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v4.8');
 
   return h('div',{id:'app'},
     /* SIDEBAR */
@@ -1224,7 +1233,7 @@ catch(e){document.getElementById('app').innerHTML='<div style="padding:40px;text
 if('serviceWorker' in navigator){
   // Inline SW as a Blob URL so no separate sw.js file is needed
   const swCode = `
-const CACHE = 'tiretrack-v4.7';
+const CACHE = 'tiretrack-v4.8';
 const URLS  = [self.location.href.replace(/\\/sw-inline.js.*$/, '') || '/'];
 
 self.addEventListener('install', e => {
