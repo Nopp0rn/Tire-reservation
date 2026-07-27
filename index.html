@@ -344,7 +344,7 @@ try{
 /* CONSTANTS */
 const BRANCHES=['003','009','010','012','014','048','050','096','107','143'];
 // เพิ่มทุกครั้งที่ deploy โค้ดใหม่ — ใช้เช็คว่าแท็บที่เปิดค้างไว้รันโค้ดเก่าอยู่หรือไม่ (ดู checkVersion ใน App())
-const APP_VERSION = 'v4.9-20260727';
+const APP_VERSION = 'v5.0-20260727';
 const BRANDS=['Bridgestone','Firestone','Dayton','Michelin','Continental','Goodyear','Dunlop','Pirelli','Yokohama','Hankook','Toyo','Maxxis','อื่นๆ (Other)'];
 const CUST_TYPES=['ทั่วไป (เงินสด,SME)','Fleet','Online (FB,Lazada,Shopee,Tiktok,LineOA)','สวัสดิการพนักงาน'];
 
@@ -865,7 +865,11 @@ function App(){
       }catch(e){ /* offline/fetch ล้มเหลว — ข้าม รอเช็คใหม่รอบถัดไป */ }
     };
     const t=setInterval(checkVersion,120000); // ทุก 2 นาที
-    return()=>clearInterval(t);
+    // PWA บน iOS ไม่ได้โหลดหน้าใหม่ตอนเปิดกลับมา แค่ "ปลุก" ของเดิมที่ค้างในหน่วยความจำ
+    // จึงต้องเช็คเวอร์ชันซ้ำทุกครั้งที่แอปกลับมาอยู่หน้าจอ ให้ได้ผลเหมือนเปิดใหม่จริงๆ
+    const onVisVer=()=>{ if(!document.hidden) checkVersion(); };
+    document.addEventListener('visibilitychange',onVisVer);
+    return()=>{clearInterval(t);document.removeEventListener('visibilitychange',onVisVer);};
   },[]);
   const [loadR,setLoadR]=useState(true);
   const [loadB,setLoadB]=useState(true);
@@ -1153,7 +1157,7 @@ function App(){
 
   const TABS=[{icon:h(SDoc,{s:20}),label:'รายการจอง'},{icon:h(SGrd,{s:20}),label:'ประสิทธิภาพ'},{icon:h(SCal,{s:20}),label:'ติดตามลูกค้า'},{icon:h(SCht,{s:20}),label:'วิเคราะห์'}];
   const PAGE=[{t:'รายการจอง',s:'สาขา '+branch},{t:'ประสิทธิภาพสาขา',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'รายการติดตามลูกค้า',s:isAdmin?'ทุกสาขา':'สาขา '+branch},{t:'วิเคราะห์การจอง',s:isAdmin?'ทุกสาขา':'สาขา '+branch}];
-  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v4.9');
+  const vBadge=h('span',{style:{fontSize:9,fontWeight:600,color:'var(--gn)',background:'var(--gb)',padding:'2px 6px',borderRadius:5,marginLeft:7,verticalAlign:'middle',fontFamily:'var(--mono)'}},'v5.0');
 
   return h('div',{id:'app'},
     /* SIDEBAR */
@@ -1228,8 +1232,49 @@ function App(){
   );
 }
 
-try{ReactDOM.createRoot(document.getElementById('app')).render(h(App));}
-catch(e){document.getElementById('app').innerHTML='<div style="padding:40px;text-align:center;color:#edf0f8;font-family:sans-serif"><div style="font-size:40px;margin-bottom:16px">⚠️</div><div style="font-size:18px;font-weight:700;margin-bottom:8px">เกิดข้อผิดพลาด</div><div style="font-size:14px;color:#8e97b4">'+(e.message||'')+'</div></div>';}
+// ── ตรวจเวอร์ชันก่อนเปิดแอปทุกครั้ง ──
+// ก่อนจะ render อะไรเลย ดึงไฟล์จริงจากเซิร์ฟเวอร์มาเทียบ APP_VERSION ก่อน
+// ถ้าเซิร์ฟเวอร์มีของใหม่กว่า → reload ทันที ผู้ใช้จะได้โค้ดล่าสุดเสมอตั้งแต่วินาทีแรก
+// ไม่ต้องรอ 2 นาที และไม่ต้องให้ใครไล่ปิด-เปิดแอปเอง
+function mountApp(){
+  try{ReactDOM.createRoot(document.getElementById('app')).render(h(App));}
+  catch(e){document.getElementById('app').innerHTML='<div style="padding:40px;text-align:center;color:#edf0f8;font-family:sans-serif"><div style="font-size:40px;margin-bottom:16px">⚠️</div><div style="font-size:18px;font-weight:700;margin-bottom:8px">เกิดข้อผิดพลาด</div><div style="font-size:14px;color:#8e97b4">'+(e.message||'')+'</div></div>';}
+}
+
+async function bootWithVersionCheck(){
+  // กันลูป: ถ้า reload ไปแล้วแต่ยังได้เวอร์ชันเดิม (เช่น CDN ยังไม่อัปเดต) อย่าวนซ้ำไม่จบ
+  const RELOAD_FLAG='tt_ver_reloads';
+  let tries=0;
+  try{tries=parseInt(sessionStorage.getItem(RELOAD_FLAG)||'0')||0;}catch(e){}
+  if(tries>=2){ mountApp(); return; }   // ลองแล้ว 2 ครั้ง พอแล้ว เปิดแอปไปเลย
+
+  try{
+    // timeout 3 วิ — เน็ตช้า/ออฟไลน์ต้องไม่ทำให้แอปเปิดไม่ได้
+    const ctrl=new AbortController();
+    const to=setTimeout(()=>ctrl.abort(),3000);
+    const bust=location.href.split('?')[0]+'?_cb='+Date.now();
+    const res=await fetch(bust,{cache:'no-store',signal:ctrl.signal});
+    clearTimeout(to);
+    const text=await res.text();
+    const m=text.match(/const APP_VERSION\s*=\s*'([^']+)'/);
+    if(m&&m[1]!==APP_VERSION){
+      try{sessionStorage.setItem(RELOAD_FLAG,String(tries+1));}catch(e){}
+      // ล้าง cache ของ Service Worker ด้วย ไม่งั้น reload อาจได้ของเก่าคืนมา
+      try{
+        if(window.caches){const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k)));}
+      }catch(e){}
+      location.reload();
+      return;   // ไม่ต้อง mount รอโหลดหน้าใหม่
+    }
+    // เวอร์ชันตรงแล้ว — ล้างตัวนับทิ้ง
+    try{sessionStorage.removeItem(RELOAD_FLAG);}catch(e){}
+  }catch(e){
+    // ออฟไลน์/เช็คไม่ได้ — เปิดแอปด้วยของที่มีอยู่ ดีกว่าเปิดไม่ได้เลย
+  }
+  mountApp();
+}
+
+bootWithVersionCheck();
 })();
 </script>
 
@@ -1243,7 +1288,7 @@ catch(e){document.getElementById('app').innerHTML='<div style="padding:40px;text
 if('serviceWorker' in navigator){
   // Inline SW as a Blob URL so no separate sw.js file is needed
   const swCode = `
-const CACHE = 'tiretrack-v4.9';
+const CACHE = 'tiretrack-v5.0';
 const URLS  = [self.location.href.replace(/\\/sw-inline.js.*$/, '') || '/'];
 
 self.addEventListener('install', e => {
